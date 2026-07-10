@@ -81,9 +81,10 @@ export default function GanttChart() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const getColor = (status: string) => {
-    if (status === 'On Hold' || status === 'Hold') return '#854d0e'; // Brown
-    if (status === 'Completed') return '#22c55e'; // Green
-    if (status === 'Started' || status === 'In Progress') return '#eab308'; // Yellow
+    if (status === 'On Hold' || status === 'Hold') return '#facc15'; // Yellow
+    if (status === 'Completed') return '#166534'; // Dark Green
+    if (status === 'In Progress') return '#9d174d'; // Pink Dark
+    if (status === 'Started') return '#1e3a8a'; // Navy Blue
     return '#94a3b8'; // Grey (Not Started)
   };
 
@@ -413,9 +414,10 @@ export default function GanttChart() {
         <div className="flex gap-4">
           <div className="font-medium mr-2">Legend:</div>
           <div className="flex items-center gap-2"><span style={{ width: '12px', height: '12px', backgroundColor: '#94a3b8', borderRadius: '2px' }}></span> Not Started</div>
-          <div className="flex items-center gap-2"><span style={{ width: '12px', height: '12px', backgroundColor: '#eab308', borderRadius: '2px' }}></span> In Progress</div>
-          <div className="flex items-center gap-2"><span style={{ width: '12px', height: '12px', backgroundColor: '#22c55e', borderRadius: '2px' }}></span> Completed</div>
-          <div className="flex items-center gap-2"><span style={{ width: '12px', height: '12px', backgroundColor: '#854d0e', borderRadius: '2px' }}></span> Hold</div>
+          <div className="flex items-center gap-2"><span style={{ width: '12px', height: '12px', backgroundColor: '#1e3a8a', borderRadius: '2px' }}></span> Started</div>
+          <div className="flex items-center gap-2"><span style={{ width: '12px', height: '12px', backgroundColor: '#9d174d', borderRadius: '2px' }}></span> In Progress</div>
+          <div className="flex items-center gap-2"><span style={{ width: '12px', height: '12px', backgroundColor: '#166534', borderRadius: '2px' }}></span> Completed</div>
+          <div className="flex items-center gap-2"><span style={{ width: '12px', height: '12px', backgroundColor: '#facc15', borderRadius: '2px' }}></span> Hold</div>
         </div>
       </div>
     </div>

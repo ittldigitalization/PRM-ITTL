@@ -106,6 +106,7 @@ export default function TaskManagement() {
 
   const [activeTab, setActiveTab] = useState<Tab>('individual');
   const [searchTerm, setSearchTerm] = useState('');
+  const [projectFilter, setProjectFilter] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   
@@ -113,6 +114,7 @@ export default function TaskManagement() {
 
   const filteredTasks = tasks.filter(t => 
     (activeTab === 'individual' ? t.type === 'Individual' : t.type === 'Team') &&
+    (projectFilter === 'All' || t.projectId === projectFilter) &&
     (t.title.toLowerCase().includes(searchTerm.toLowerCase()) || t.projectName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -312,6 +314,17 @@ export default function TaskManagement() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        <select 
+          className="form-input" 
+          style={{ width: '200px', padding: '0.5rem', marginLeft: 'auto' }}
+          value={projectFilter}
+          onChange={(e) => setProjectFilter(e.target.value)}
+        >
+          <option value="All">All Projects</option>
+          {projects.map(p => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
         <button 
           className="btn btn-primary"
           onClick={() => { 
@@ -336,6 +349,8 @@ export default function TaskManagement() {
               <th>Task Title</th>
               <th>Start Date</th>
               <th>End Date</th>
+              <th>Actual Start</th>
+              <th>Actual End Date</th>
               <th>Status</th>
               <th>Document</th>
               <th>Actions</th>
@@ -352,6 +367,8 @@ export default function TaskManagement() {
                 <td className="font-medium">{task.title}</td>
                 <td>{task.startDate}</td>
                 <td>{task.endDate}</td>
+                <td>{task.actualStartDate || '-'}</td>
+                <td>{task.actualEndDate || '-'}</td>
                 <td>{getStatusBadge(task.status, task.id)}</td>
                 <td>
                   {task.documentUrl ? (
@@ -409,12 +426,12 @@ export default function TaskManagement() {
             ))}
             {loading && (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading tasks...</td>
+                <td colSpan={13} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading tasks...</td>
               </tr>
             )}
             {!loading && filteredTasks.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">
+                <td colSpan={13} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">
                   No {activeTab} tasks found.
                 </td>
               </tr>

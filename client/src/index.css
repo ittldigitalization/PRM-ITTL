@@ -327,6 +327,7 @@ input, select, textarea {
   letter-spacing: -0.01em;
   text-transform: uppercase;
   font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .data-table td {
@@ -334,6 +335,7 @@ input, select, textarea {
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   color: var(--foreground);
   transition: background-color 0.2s ease;
+  white-space: nowrap;
 }
 
 .data-table tr:last-child td {

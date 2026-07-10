@@ -52,7 +52,7 @@ export default function ProjectManagement() {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('projects').select('*').order('code', { ascending: true });
       if (error) throw error;
       
       // Transform data from snake_case to camelCase for the frontend

@@ -52,7 +52,7 @@ export default function MilestoneManagement() {
   const fetchMilestones = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.from('milestones').select('*, projects(name, code)').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('milestones').select('*, projects(name, code)').order('start_date', { ascending: true });
       if (error) throw error;
 
       const formatted = data?.map(m => ({
@@ -83,14 +83,16 @@ export default function MilestoneManagement() {
   };
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [projectFilter, setProjectFilter] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [currentMilestone, setCurrentMilestone] = useState<Partial<Milestone>>({ status: 'Not Started' });
   const [selectedMilestones, setSelectedMilestones] = useState<string[]>([]);
 
   const filteredMilestones = milestones.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    m.projectName.toLowerCase().includes(searchTerm.toLowerCase())
+    (projectFilter === 'All' || m.projectId === projectFilter) &&
+    (m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    m.projectName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleStatusChange = async (id: string, newStatus: MilestoneStatus) => {
@@ -267,6 +269,17 @@ export default function MilestoneManagement() {
           />
         </div>
         <div className="flex gap-4 items-center" style={{ marginLeft: 'auto' }}>
+          <select 
+            className="form-input" 
+            style={{ width: '200px', padding: '0.5rem' }}
+            value={projectFilter}
+            onChange={(e) => setProjectFilter(e.target.value)}
+          >
+            <option value="All">All Projects</option>
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
           {selectedMilestones.length > 0 && (
             <button 
               className="btn btn-outline"
