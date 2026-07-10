@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+
   useEffect(() => {
     fetchDashboardData();
 
@@ -59,9 +60,9 @@ export default function Dashboard() {
     }
   };
 
-  const totalPlannedBudget = projects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0);
+  const overallBudget = projects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0);
   const actualCost = projects.reduce((sum, p) => sum + (Number(p.actual_cost) || 0), 0);
-  const remainingBudget = totalPlannedBudget - actualCost;
+  const remainingBudget = overallBudget - actualCost;
   
   const activeMilestones = milestones.filter(m => m.status === 'In Progress' || m.status === 'Not Started').length;
   const tasksInProgress = tasks.filter(t => t.status === 'In Progress').length;
@@ -175,7 +176,7 @@ export default function Dashboard() {
           </div>
           <div className="text-sm">
             <span className="font-medium text-muted">
-              {actualCost > 0 ? `${Math.round((actualCost / totalPlannedBudget) * 100) || 0}% used of total` : 'No expenses yet'}
+              {actualCost > 0 ? `${Math.round((actualCost / overallBudget) * 100) || 0}% used of total` : 'No expenses yet'}
             </span>
           </div>
         </div>

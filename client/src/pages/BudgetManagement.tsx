@@ -1,4 +1,4 @@
-import { Search, Eye, X } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -7,6 +7,8 @@ export default function BudgetManagement() {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState<any>({});
 
@@ -55,9 +57,23 @@ export default function BudgetManagement() {
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPlannedBudget = projects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0);
+  const overallBudget = projects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0);
   const actualCost = projects.reduce((sum, p) => sum + (Number(p.actualCost) || 0), 0);
-  const remainingBudget = totalPlannedBudget - actualCost;
+  const remainingBudget = overallBudget - actualCost;
+
+  const handleUpdateCost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      // We only update the budget here now, because actual_cost is auto-calculated from billing
+      const { error } = await supabase.from('projects').update({ budget: currentProject.budget }).eq('id', currentProject.id);
+      if (error) throw error;
+      fetchProjects(); // Refresh the list from the database
+      setIsEditModalOpen(false);
+    } catch (err) {
+      console.error('Error updating budget:', err);
+      alert('Failed to update budget in the database');
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch(status) {
@@ -75,8 +91,10 @@ export default function BudgetManagement() {
           <div className="flex justify-between items-start mb-2">
             <div>
               <p className="text-muted text-sm font-medium">Total Planned Budget</p>
-              <h3 className="text-2xl font-bold">₹ {totalPlannedBudget.toLocaleString('en-IN')}</h3>
-              <p className="text-xs text-muted mt-1">Auto Calculated from Projects</p>
+              <div className="flex items-center gap-2 mt-1">
+                <h3 className="text-2xl font-bold">₹ {overallBudget.toLocaleString('en-IN')}</h3>
+              </div>
+              <p className="text-xs text-muted mt-1">Sum of Project Budgets</p>
             </div>
 
           </div>
@@ -126,8 +144,8 @@ export default function BudgetManagement() {
               <th>Project Name</th>
               <th>Project Code</th>
               <th style={{ textAlign: 'right' }}>Planned Budget</th>
-              <th style={{ textAlign: 'right' }}>Actual Cost</th>
-              <th style={{ textAlign: 'right' }}>Balanced Cost</th>
+              <th style={{ textAlign: 'right' }}>Actual Cost (Auto)</th>
+              <th style={{ textAlign: 'right' }}>Remaining Budget (Auto)</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -153,6 +171,26 @@ export default function BudgetManagement() {
                     >
                       <Eye size={16} />
                     </button>
+                    <button 
+                      className="btn btn-outline" 
+                      style={{ padding: '0.25rem 0.5rem' }} 
+                      title="Edit Cost"
+                      onClick={() => { setCurrentProject(project); setIsEditModalOpen(true); }}
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button 
+                      className="btn btn-outline" 
+                      style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
+                      title="Delete"
+                      onClick={() => {
+                        if(confirm('Are you sure you want to remove this project?')) {
+                          setProjects(projects.filter(p => p.id !== project.id));
+                        }
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -171,7 +209,46 @@ export default function BudgetManagement() {
         </table>
       </div>
 
-
+      {isEditModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
+              <h2 className="text-lg font-bold">Update Actual Cost</h2>
+              <button onClick={() => setIsEditModalOpen(false)} style={{ color: 'var(--muted-foreground)' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateCost} className="flex flex-col gap-4">
+              <div>
+                <label className="form-label">Project Name</label>
+                <input type="text" className="form-input" value={currentProject.name} disabled />
+              </div>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="form-label">Planned Budget</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={currentProject.budget !== undefined ? currentProject.budget : ''} 
+                    onChange={e => {
+                      const val = e.target.value.replace(/,/g, '').replace(/[^\d.]/g, '');
+                      setCurrentProject({...currentProject, budget: val ? Number(val) : 0})
+                    }} 
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="form-label">Actual Cost</label>
+                  <input type="text" className="form-input" value={currentProject.actualCost || '0'} disabled title="Actual cost is automatically calculated from Billing invoices" style={{ backgroundColor: '#f1f5f9', color: '#64748b' }} />
+                </div>
+              </div>
+              <div className="flex gap-4 mt-4">
+                <button type="button" className="btn btn-outline flex-1" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary flex-1">Save Cost</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {isViewModalOpen && (
         <div className="modal-overlay">

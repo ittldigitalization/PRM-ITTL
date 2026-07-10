@@ -310,6 +310,8 @@ export default function MilestoneManagement() {
               <th>Milestone Name</th>
               <th>Start Date</th>
               <th>Target Date</th>
+              <th>Actual Start</th>
+              <th>Actual End Date</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -336,6 +338,8 @@ export default function MilestoneManagement() {
                 <td className="font-medium">{milestone.name}</td>
                 <td>{milestone.startDate}</td>
                 <td>{milestone.endDate}</td>
+                <td>{milestone.actualStartDate || '-'}</td>
+                <td>{milestone.actualEndDate || '-'}</td>
                 <td>{getStatusBadge(milestone.status, milestone.id)}</td>
                 <td>
                   <div className="flex gap-2">
@@ -369,12 +373,12 @@ export default function MilestoneManagement() {
             ))}
             {loading && (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading milestones...</td>
+                <td colSpan={10} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading milestones...</td>
               </tr>
             )}
             {!loading && filteredMilestones.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">
+                <td colSpan={10} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">
                   No milestones found.
                 </td>
               </tr>

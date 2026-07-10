@@ -152,7 +152,6 @@ export default function DashboardLayout() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{ textAlign: 'right' }}>
                 <p className="text-sm font-semibold">{user?.email || 'User'}</p>
-                <p className="text-sm text-muted" style={{ fontSize: '0.75rem' }}>Project Manager</p>
               </div>
               <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#e3282f', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
                 {user?.email ? user.email.substring(0, 2).toUpperCase() : 'UN'}

@@ -274,7 +274,7 @@ export default function ProjectManagement() {
             <tr>
               <th>Project Code</th>
               <th>Project Name</th>
-              <th>Budget</th>
+              <th>Planned Budget</th>
               <th>Type</th>
               <th>Start Date</th>
               <th>Manager</th>
@@ -426,7 +426,7 @@ export default function ProjectManagement() {
               </div>
               <div className="flex gap-4">
                 <div className="form-group flex-1">
-                  <label className="form-label">Budget ($)</label>
+                  <label className="form-label">Planned Budget</label>
                   <input 
                     required 
                     type="text" 
