@@ -107,14 +107,21 @@ export default function TaskManagement() {
   const [activeTab, setActiveTab] = useState<Tab>('individual');
   const [searchTerm, setSearchTerm] = useState('');
   const [projectFilter, setProjectFilter] = useState('All');
+  const [milestoneFilter, setMilestoneFilter] = useState('All');
+  const [assignedToFilter, setAssignedToFilter] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   
   const [currentTask, setCurrentTask] = useState<Partial<Task>>({ type: 'Individual', status: 'Started' });
 
+  const uniqueMilestones = Array.from(new Set(tasks.map(t => t.milestoneName).filter(Boolean)));
+  const uniqueAssignees = Array.from(new Set(tasks.map(t => t.assignedTo).filter(Boolean)));
+
   const filteredTasks = tasks.filter(t => 
     (activeTab === 'individual' ? t.type === 'Individual' : t.type === 'Team') &&
     (projectFilter === 'All' || t.projectId === projectFilter) &&
+    (milestoneFilter === 'All' || t.milestoneName === milestoneFilter) &&
+    (assignedToFilter === 'All' || t.assignedTo === assignedToFilter) &&
     (t.title.toLowerCase().includes(searchTerm.toLowerCase()) || t.projectName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -238,6 +245,10 @@ export default function TaskManagement() {
         const { error } = await supabase.from('tasks').delete().eq('id', task.id);
         if (error) throw error;
         
+        if (task.documentUrl) {
+          await supabase.from('documents').delete().eq('file_url', task.documentUrl);
+        }
+
         // Cascade Progress after delete
         await cascadeProgress(task.milestoneId || '', task.projectId || '');
         
@@ -302,8 +313,19 @@ export default function TaskManagement() {
         </button>
       </div>
 
-      <div className="page-header">
-        <div style={{ position: 'relative', width: '300px' }}>
+      <div className="mb-6 flex items-center gap-4">
+        <span style={{ height: '1px', flex: 1, backgroundColor: 'var(--border)' }} />
+        <span className="small-caps" style={{ color: 'var(--accent)' }}>
+          Task Portfolio
+        </span>
+        <span style={{ height: '1px', flex: 1, backgroundColor: 'var(--border)' }} />
+      </div>
+
+      <div className="page-header" style={{ alignItems: 'flex-end' }}>
+        <div>
+          <h1 className="serif-heading" style={{ fontSize: '2.5rem', margin: 0, lineHeight: 1.2 }}>Tasks</h1>
+        </div>
+        <div style={{ position: 'relative', width: '300px', marginLeft: '2rem' }}>
           <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-foreground)' }} />
           <input
             type="text"
@@ -314,27 +336,54 @@ export default function TaskManagement() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <select 
-          className="form-input" 
-          style={{ width: '200px', padding: '0.5rem', marginLeft: 'auto' }}
-          value={projectFilter}
-          onChange={(e) => setProjectFilter(e.target.value)}
-        >
-          <option value="All">All Projects</option>
-          {projects.map(p => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-        <button 
-          className="btn btn-primary"
-          onClick={() => { 
-            setCurrentTask({ type: activeTab === 'individual' ? 'Individual' : 'Team', status: 'Started' }); 
-            setIsModalOpen(true); 
-          }}
-        >
-          <Plus size={18} style={{ marginRight: '0.5rem' }} />
-          Add Task
-        </button>
+        <div className="flex gap-4 items-center" style={{ marginLeft: 'auto' }}>
+          <select 
+            className="form-input" 
+            style={{ width: '180px', padding: '0.5rem' }}
+            value={projectFilter}
+            onChange={(e) => setProjectFilter(e.target.value)}
+          >
+            <option value="All">All Projects</option>
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+
+          <select 
+            className="form-input" 
+            style={{ width: '180px', padding: '0.5rem' }}
+            value={milestoneFilter}
+            onChange={(e) => setMilestoneFilter(e.target.value)}
+          >
+            <option value="All">All Milestones</option>
+            {uniqueMilestones.map(m => (
+              <option key={m as string} value={m as string}>{m as string}</option>
+            ))}
+          </select>
+
+          <select 
+            className="form-input" 
+            style={{ width: '180px', padding: '0.5rem' }}
+            value={assignedToFilter}
+            onChange={(e) => setAssignedToFilter(e.target.value)}
+          >
+            <option value="All">All Assignees</option>
+            {uniqueAssignees.map(a => (
+              <option key={a as string} value={a as string}>{a as string}</option>
+            ))}
+          </select>
+
+          <button 
+            className="btn btn-primary"
+            onClick={() => { 
+              setCurrentTask({ type: activeTab === 'individual' ? 'Individual' : 'Team', status: 'Started' }); 
+              setIsModalOpen(true); 
+            }}
+          >
+            <Plus size={18} style={{ marginRight: '0.5rem' }} />
+            Add Task
+          </button>
+        </div>
       </div>
 
       <div className="table-container">
@@ -352,6 +401,7 @@ export default function TaskManagement() {
               <th>Actual Start</th>
               <th>Actual End Date</th>
               <th>Status</th>
+              <th>Remarks</th>
               <th>Document</th>
               <th>Actions</th>
             </tr>
@@ -370,6 +420,9 @@ export default function TaskManagement() {
                 <td>{task.actualStartDate || '-'}</td>
                 <td>{task.actualEndDate || '-'}</td>
                 <td>{getStatusBadge(task.status, task.id)}</td>
+                <td style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={task.remarks}>
+                  {task.remarks || '-'}
+                </td>
                 <td>
                   {task.documentUrl ? (
                     <div 
@@ -426,12 +479,12 @@ export default function TaskManagement() {
             ))}
             {loading && (
               <tr>
-                <td colSpan={13} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading tasks...</td>
+                <td colSpan={14} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading tasks...</td>
               </tr>
             )}
             {!loading && filteredTasks.length === 0 && (
               <tr>
-                <td colSpan={13} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">
+                <td colSpan={14} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">
                   No {activeTab} tasks found.
                 </td>
               </tr>
@@ -650,16 +703,13 @@ export default function TaskManagement() {
       {isViewModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '600px', padding: 0, overflow: 'hidden' }}>
-            <div style={{ backgroundColor: '#f8fafc', padding: '1.5rem 2rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ backgroundColor: 'var(--muted)', padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <svg width="120" height="32" viewBox="0 0 150 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="150" height="40" rx="4" fill="#e3282f" />
-                  <text x="75" y="27" fontFamily="Inter, sans-serif" fontSize="22" fontWeight="900" fill="white" textAnchor="middle" letterSpacing="1">INDO TECH</text>
-                </svg>
-                <div style={{ height: '24px', width: '2px', backgroundColor: '#cbd5e1' }}></div>
-                <h2 className="text-lg font-bold text-slate-800">Task Details</h2>
+                <img src="/logo.jpg" alt="INDO TECH" style={{ height: '32px', objectFit: 'contain' }} />
+                <div style={{ height: '24px', width: '2px', backgroundColor: 'var(--border)' }}></div>
+                <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>Task Details</h2>
               </div>
-              <button onClick={() => setIsViewModalOpen(false)} style={{ color: '#64748b', padding: '0.5rem', borderRadius: '50%', backgroundColor: 'white', border: '1px solid #e2e8f0', cursor: 'pointer' }} className="hover:bg-slate-50 transition-colors">
+              <button onClick={() => setIsViewModalOpen(false)} style={{ color: 'var(--muted-foreground)', padding: '0.5rem', borderRadius: '50%', backgroundColor: 'transparent', border: '1px solid var(--border)', cursor: 'pointer' }} className="hover:bg-slate-50 transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -710,8 +760,8 @@ export default function TaskManagement() {
               </div>
             </div>
 
-            <div style={{ backgroundColor: '#f8fafc', padding: '1rem 2rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-primary shadow-sm" onClick={() => setIsViewModalOpen(false)}>
+            <div style={{ backgroundColor: 'var(--muted)', padding: '1rem 2rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-primary" onClick={() => setIsViewModalOpen(false)}>
                 Close Window
               </button>
             </div>

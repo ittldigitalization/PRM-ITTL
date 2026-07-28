@@ -203,8 +203,14 @@ export default function DocumentManagement() {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this document?')) {
       try {
+        const docToDelete = documents.find(d => d.id === id);
         const { error } = await supabase.from('documents').delete().eq('id', id);
         if (error) throw error;
+        
+        if (docToDelete && docToDelete.file_url) {
+          await supabase.from('tasks').update({ document_url: null }).eq('document_url', docToDelete.file_url);
+        }
+
         fetchDocuments();
       } catch (error: any) {
         console.error('Error deleting document:', error);

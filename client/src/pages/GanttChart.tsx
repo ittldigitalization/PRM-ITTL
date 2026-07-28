@@ -79,6 +79,8 @@ export default function GanttChart() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Month);
   const [searchQuery, setSearchQuery] = useState('');
+  const [projectFilter, setProjectFilter] = useState('All');
+  const [projectsList, setProjectsList] = useState<any[]>([]);
 
   const getColor = (status: string) => {
     if (status === 'On Hold' || status === 'Hold') return '#facc15'; // Yellow
@@ -123,6 +125,7 @@ export default function GanttChart() {
       const projects = projectsRes.data || [];
       const milestones = milestonesRes.data || [];
       const tasksData = tasksRes.data || [];
+      setProjectsList(projects);
 
       let formattedTasks: Task[] = [];
       let individualTasks: Task[] = [];
@@ -239,6 +242,7 @@ export default function GanttChart() {
   };
 
   useEffect(() => {
+    setProjectFilter('All');
     fetchData();
 
     const handleDbChange = (payload: any, table: string) => {
@@ -344,14 +348,25 @@ export default function GanttChart() {
         </div>
         
         <div className="flex items-center gap-4">
+          <select 
+            className="form-input" 
+            style={{ width: '200px', padding: '0.2rem 0.5rem', height: '36px', fontSize: '0.875rem' }}
+            value={projectFilter}
+            onChange={(e) => setProjectFilter(e.target.value)}
+          >
+            <option value="All">All Projects</option>
+            {projectsList.filter(p => activeTab === 'team' ? p.type === 'External project' : p.type !== 'External project').map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
           <div className="w-64 relative">
              <input 
                type="text" 
-               className="input w-full" 
+               className="form-input w-full" 
                placeholder="Search projects..." 
                value={searchQuery}
                onChange={(e) => setSearchQuery(e.target.value)}
-               style={{ paddingLeft: '1rem', height: '32px' }}
+               style={{ paddingLeft: '1rem', height: '36px', fontSize: '0.875rem' }}
              />
           </div>
 
@@ -369,6 +384,21 @@ export default function GanttChart() {
         ) : tasks.length > 0 ? (() => {
           
           let filteredTasks = tasks;
+          if (projectFilter !== 'All') {
+             filteredTasks = filteredTasks.filter(t => {
+                 if (t.id === `p-${projectFilter}`) return true;
+                 if (t.id.startsWith('m-')) return t.project === `p-${projectFilter}`;
+                 if (t.id.startsWith('t-')) {
+                     if (t.project === `p-${projectFilter}`) return true;
+                     if (t.project?.startsWith('m-')) {
+                         const parentMilestone = tasks.find(m => m.id === t.project);
+                         return parentMilestone && parentMilestone.project === `p-${projectFilter}`;
+                     }
+                 }
+                 return false;
+             });
+          }
+
           if (searchQuery.trim() !== '') {
              const lowerQuery = searchQuery.toLowerCase();
              const matchingProjectIds = new Set(tasks.filter(t => t.id.startsWith('p-') && t.name.toLowerCase().includes(lowerQuery)).map(t => t.id));

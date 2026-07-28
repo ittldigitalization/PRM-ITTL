@@ -10,8 +10,14 @@ import TeamManagement from './pages/TeamManagement';
 import DPR from './pages/DPR';
 import BudgetManagement from './pages/BudgetManagement';
 import DocumentManagement from './pages/DocumentManagement';
-import EmailNotification from './pages/EmailNotification';
 import BillingManagement from './pages/BillingManagement';
+import CustomerManagement from './pages/CustomerManagement';
+import IssueTracker from './pages/IssueTracker';
+import AmcDashboard from './pages/amc/AmcDashboard';
+import AmcContracts from './pages/amc/AmcContracts';
+import AmcPayments from './pages/amc/AmcPayments';
+import AmcDocuments from './pages/amc/AmcDocuments';
+import AmcHistory from './pages/amc/AmcHistory';
 
 function App() {
   return (
@@ -29,7 +35,13 @@ function App() {
           <Route path="budget" element={<BudgetManagement />} />
           <Route path="billing" element={<BillingManagement />} />
           <Route path="documents" element={<DocumentManagement />} />
-          <Route path="notifications" element={<EmailNotification />} />
+          <Route path="customers" element={<CustomerManagement />} />
+          <Route path="issues" element={<IssueTracker />} />
+          <Route path="amc" element={<AmcDashboard />} />
+          <Route path="amc/contracts" element={<AmcContracts />} />
+          <Route path="amc/payments" element={<AmcPayments />} />
+          <Route path="amc/documents" element={<AmcDocuments />} />
+          <Route path="amc/history" element={<AmcHistory />} />
         </Route>
       </Routes>
     </Router>

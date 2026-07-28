@@ -235,8 +235,19 @@ export default function ProjectManagement() {
 
   return (
     <div>
-      <div className="page-header">
-        <div style={{ position: 'relative', width: '300px' }}>
+      <div className="mb-6 flex items-center gap-4">
+        <span style={{ height: '1px', flex: 1, backgroundColor: 'var(--border)' }} />
+        <span className="small-caps" style={{ color: 'var(--accent)' }}>
+          Project Portfolio
+        </span>
+        <span style={{ height: '1px', flex: 1, backgroundColor: 'var(--border)' }} />
+      </div>
+
+      <div className="page-header" style={{ alignItems: 'flex-end' }}>
+        <div>
+          <h1 className="serif-heading" style={{ fontSize: '2.5rem', margin: 0, lineHeight: 1.2 }}>Projects</h1>
+        </div>
+        <div style={{ position: 'relative', width: '300px', marginLeft: '2rem' }}>
           <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-foreground)' }} />
           <input
             type="text"
@@ -277,7 +288,6 @@ export default function ProjectManagement() {
               <th>Planned Budget</th>
               <th>Type</th>
               <th>Start Date</th>
-              <th>Manager</th>
               <th>Progress</th>
               <th>Status</th>
               <th>Actions</th>
@@ -295,7 +305,6 @@ export default function ProjectManagement() {
                   </span>
                 </td>
                 <td>{project.startDate}</td>
-                <td>{project.managerName || '-'}</td>
                 <td>
                   <div className="flex items-center gap-2">
                     <div className="flex-1" style={{ height: '6px', backgroundColor: 'var(--border)', borderRadius: '3px', overflow: 'hidden', width: '60px' }}>
@@ -493,16 +502,13 @@ export default function ProjectManagement() {
       {isViewModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '600px', padding: 0, overflow: 'hidden' }}>
-            <div style={{ backgroundColor: '#f8fafc', padding: '1.5rem 2rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ backgroundColor: 'var(--muted)', padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <svg width="120" height="32" viewBox="0 0 150 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="150" height="40" rx="4" fill="#e3282f" />
-                  <text x="75" y="27" fontFamily="Inter, sans-serif" fontSize="22" fontWeight="900" fill="white" textAnchor="middle" letterSpacing="1">INDO TECH</text>
-                </svg>
-                <div style={{ height: '24px', width: '2px', backgroundColor: '#cbd5e1' }}></div>
-                <h2 className="text-lg font-bold text-slate-800">Project Details</h2>
+                <img src="/logo.jpg" alt="INDO TECH" style={{ height: '32px', objectFit: 'contain' }} />
+                <div style={{ height: '24px', width: '2px', backgroundColor: 'var(--border)' }}></div>
+                <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>Project Details</h2>
               </div>
-              <button onClick={() => setIsViewModalOpen(false)} style={{ color: '#64748b', padding: '0.5rem', borderRadius: '50%', backgroundColor: 'white', border: '1px solid #e2e8f0', cursor: 'pointer' }} className="hover:bg-slate-50 transition-colors">
+              <button onClick={() => setIsViewModalOpen(false)} style={{ color: 'var(--muted-foreground)', padding: '0.5rem', borderRadius: '50%', backgroundColor: 'transparent', border: '1px solid var(--border)', cursor: 'pointer' }} className="hover:bg-slate-50 transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -554,8 +560,8 @@ export default function ProjectManagement() {
               </div>
             </div>
 
-            <div style={{ backgroundColor: '#f8fafc', padding: '1rem 2rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-primary shadow-sm" onClick={() => setIsViewModalOpen(false)}>
+            <div style={{ backgroundColor: 'var(--muted)', padding: '1rem 2rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-primary" onClick={() => setIsViewModalOpen(false)}>
                 Close Window
               </button>
             </div>

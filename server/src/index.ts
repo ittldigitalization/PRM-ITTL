@@ -8,21 +8,9 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Security: Restrict CORS to specific origins
-const allowedOrigins = [
-  'http://localhost:7455',
-  'http://192.168.7.92:7455',
-];
-
+// Security: Allow all origins for local network access
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error('Not allowed by CORS'));
-  },
+  origin: '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -69,6 +57,6 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'EPMS Server is running' });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.listen(port as number, '0.0.0.0', () => {
+  console.log(`Server running on port ${port} and accessible on all network interfaces`);
 });

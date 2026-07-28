@@ -422,8 +422,9 @@ export default function MilestoneManagement() {
                       ...currentMilestone, 
                       projectId: e.target.value, 
                       projectName: proj?.name,
-                      startDate: currentMilestone.startDate || (proj as any)?.start_date,
-                      endDate: currentMilestone.endDate || (proj as any)?.end_date
+                      // Prioritize the new project's dates so they correctly fetch and overwrite when changing projects
+                      startDate: (proj as any)?.start_date || currentMilestone.startDate,
+                      endDate: (proj as any)?.end_date || currentMilestone.endDate
                     });
                   }}
                 >
