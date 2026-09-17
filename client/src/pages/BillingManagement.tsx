@@ -10,6 +10,7 @@ interface Billing {
   milestoneName?: string;
   vendorName: string;
   invoiceNo: string;
+  poNo?: string;
   invoiceAmount: number;
   paymentStatus: string;
   attachmentUrl?: string;
@@ -47,7 +48,7 @@ export default function BillingManagement() {
 
   const fetchBillings = async () => {
     try {
-      setLoading(true);
+
       const { data, error } = await supabase.from('billings').select('*, projects(name), milestones(name)').order('created_at', { ascending: false });
       if (error) throw error;
 
@@ -59,6 +60,7 @@ export default function BillingManagement() {
         milestoneName: d.milestones?.name || '-',
         vendorName: d.vendor_name,
         invoiceNo: d.invoice_no,
+        poNo: d.po_number,
         invoiceAmount: d.invoice_amount,
         paymentStatus: d.payment_status,
         attachmentUrl: d.attachment_url,
@@ -81,6 +83,7 @@ export default function BillingManagement() {
   const [selectedMilestoneId, setSelectedMilestoneId] = useState('');
   const [vendorName, setVendorName] = useState('');
   const [invoiceNo, setInvoiceNo] = useState('');
+  const [poNo, setPoNo] = useState('');
   const [invoiceAmount, setInvoiceAmount] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('Not Paid');
   const [actualDate, setActualDate] = useState('');
@@ -111,6 +114,7 @@ export default function BillingManagement() {
     setSelectedMilestoneId('');
     setVendorName('');
     setInvoiceNo('');
+    setPoNo('');
     setInvoiceAmount('');
     setPaymentStatus('Not Paid');
     setActualDate('');
@@ -125,6 +129,7 @@ export default function BillingManagement() {
     setSelectedMilestoneId(bill.milestoneId || '');
     setVendorName(bill.vendorName);
     setInvoiceNo(bill.invoiceNo);
+    setPoNo(bill.poNo || '');
     setInvoiceAmount(bill.invoiceAmount.toString());
     setPaymentStatus(bill.paymentStatus);
     setActualDate(bill.actualDate);
@@ -182,6 +187,7 @@ export default function BillingManagement() {
         milestone_id: selectedMilestoneId || null,
         vendor_name: vendorName,
         invoice_no: invoiceNo,
+        po_number: poNo || null,
         invoice_amount: parseFloat(invoiceAmount),
         payment_status: paymentStatus,
         attachment_url: finalAttachmentUrl,
@@ -242,11 +248,22 @@ export default function BillingManagement() {
         </button>
       </div>
 
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
+        >
+          Back
+        </button>
+      </div>
+
       <div className="table-container">
         <table className="data-table">
           <thead>
             <tr>
               <th>Invoice No</th>
+              <th>PO Number</th>
               <th>Vendor Name</th>
               <th>Project</th>
               <th>Milestone</th>
@@ -266,6 +283,7 @@ export default function BillingManagement() {
               filteredBillings.map((bill) => (
                 <tr key={bill.id}>
                   <td className="font-medium">{bill.invoiceNo}</td>
+                  <td>{bill.poNo || '-'}</td>
                   <td>{bill.vendorName}</td>
                   <td>{bill.projectName}</td>
                   <td>{bill.milestoneName}</td>
@@ -401,6 +419,17 @@ export default function BillingManagement() {
                   onChange={(e) => setInvoiceNo(e.target.value)}
                   placeholder="INV-XXXX"
                   required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">PO Number</label>
+                <input 
+                  type="text" 
+                  className="form-input"
+                  value={poNo}
+                  onChange={(e) => setPoNo(e.target.value)}
+                  placeholder="PO-XXXX"
                 />
               </div>
 

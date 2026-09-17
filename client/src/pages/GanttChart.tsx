@@ -7,7 +7,7 @@ type Tab = 'team' | 'individual';
 
 const CustomTaskListHeader: React.FC<{ headerHeight: number; rowWidth: string; fontFamily: string; fontSize: string }> = ({ headerHeight, fontFamily, fontSize }) => {
   return (
-    <div style={{ display: 'flex', height: headerHeight, fontFamily, fontSize, borderBottom: '1px solid #ebeff2', background: '#f8fafc', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+    <div style={{ display: 'flex', height: headerHeight, fontFamily, fontSize, borderBottom: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--muted-foreground)', fontWeight: 600, textTransform: 'uppercase' }}>
       <div style={{ flex: 1, minWidth: '150px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px' }}>Name</div>
       <div style={{ width: '80px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px' }}>From</div>
       <div style={{ width: '80px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px' }}>To</div>
@@ -40,7 +40,7 @@ const CustomTaskListTable: React.FC<{
         return (
           <div 
             key={t.id} 
-            style={{ display: 'flex', height: rowHeight, fontFamily, borderBottom: '1px solid #ebeff2', background: t.id === selectedTaskId ? '#f3f4f6' : 'transparent', color: '#334155' }}
+            style={{ display: 'flex', height: rowHeight, fontFamily, borderBottom: '1px solid var(--border)', background: t.id === selectedTaskId ? 'var(--muted)' : 'transparent', color: 'var(--foreground)' }}
             onClick={() => setSelectedTask(t.id)}
           >
              <div style={{ flex: 1, minWidth: '150px', padding: '0 10px', paddingLeft, display: 'flex', alignItems: 'center', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
@@ -62,11 +62,11 @@ const CustomTooltip: React.FC<{ task: Task; fontSize: string; fontFamily: string
   const durationMs = task.end.getTime() - task.start.getTime();
   const durationDays = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60 * 24)));
   return (
-    <div style={{ padding: '12px', background: 'white', border: `2px solid ${task.styles?.backgroundColor || '#e2e8f0'}`, borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontFamily, fontSize }}>
-      <b style={{ fontSize: '14px', display: 'block', marginBottom: '4px', color: task.styles?.backgroundColor || '#0f172a' }}>{task.name}</b>
-      <div style={{ fontSize: '12px', color: '#64748b' }}>Start: {task.start.toLocaleDateString('en-GB')}</div>
-      <div style={{ fontSize: '12px', color: '#64748b' }}>End: {task.end.toLocaleDateString('en-GB')}</div>
-      <div style={{ fontSize: '12px', fontWeight: 'bold', marginTop: '4px', color: task.styles?.backgroundColor || '#000' }}>
+    <div style={{ padding: '12px', background: 'var(--card)', border: `2px solid ${task.styles?.backgroundColor || 'var(--border)'}`, borderRadius: '8px', boxShadow: 'var(--shadow-md)', fontFamily, fontSize }}>
+      <b style={{ fontSize: '14px', display: 'block', marginBottom: '4px', color: task.styles?.backgroundColor || 'var(--foreground)' }}>{task.name}</b>
+      <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>Start: {task.start.toLocaleDateString('en-GB')}</div>
+      <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>End: {task.end.toLocaleDateString('en-GB')}</div>
+      <div style={{ fontSize: '12px', fontWeight: 'bold', marginTop: '4px', color: task.styles?.backgroundColor || 'var(--foreground)' }}>
         Duration: {durationDays} Days
       </div>
     </div>
@@ -115,7 +115,7 @@ export default function GanttChart() {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
+
       const [projectsRes, milestonesRes, tasksRes] = await Promise.all([
         supabase.from('projects').select('*').order('start_date', { ascending: true }),
         supabase.from('milestones').select('*').order('start_date', { ascending: true }),
@@ -376,6 +376,16 @@ export default function GanttChart() {
             <button className={`btn btn-sm ${viewMode === ViewMode.Month ? 'btn-primary' : 'btn-outline'}`} onClick={() => setViewMode(ViewMode.Month)}>Month</button>
           </div>
         </div>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
+        >
+          Back
+        </button>
       </div>
 
       <div className="card p-4 overflow-hidden">

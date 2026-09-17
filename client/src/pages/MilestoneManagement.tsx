@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 type MilestoneStatus = 'Not Started' | 'In Progress' | 'Completed';
 
@@ -24,6 +25,7 @@ interface Milestone {
 }
 
 export default function MilestoneManagement() {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<any[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ export default function MilestoneManagement() {
 
   const fetchMilestones = async () => {
     try {
-      setLoading(true);
+
       const { data, error } = await supabase.from('milestones').select('*, projects(name, code)').order('start_date', { ascending: true });
       if (error) throw error;
 
@@ -83,7 +85,15 @@ export default function MilestoneManagement() {
   };
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [projectFilter, setProjectFilter] = useState('All');
+  const location = useLocation();
+  const [projectFilter, setProjectFilter] = useState(location.state?.projectId || 'All');
+
+  useEffect(() => {
+    if (location.state?.projectId) {
+      setProjectFilter(location.state.projectId);
+    }
+  }, [location.state?.projectId]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [currentMilestone, setCurrentMilestone] = useState<Partial<Milestone>>({ status: 'Not Started' });
@@ -300,6 +310,16 @@ export default function MilestoneManagement() {
         </div>
       </div>
 
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
+        >
+          Back
+        </button>
+      </div>
+
       <div className="table-container">
         <table className="data-table">
           <thead>
@@ -326,6 +346,7 @@ export default function MilestoneManagement() {
               <th>Actual Start</th>
               <th>Actual End Date</th>
               <th>Status</th>
+              <th>Tasks</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -354,6 +375,15 @@ export default function MilestoneManagement() {
                 <td>{milestone.actualStartDate || '-'}</td>
                 <td>{milestone.actualEndDate || '-'}</td>
                 <td>{getStatusBadge(milestone.status, milestone.id)}</td>
+                <td>
+                  <button 
+                    className="btn btn-outline" 
+                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)' }} 
+                    onClick={() => navigate('/tasks', { state: { projectId: milestone.projectId, milestoneName: milestone.name } })}
+                  >
+                    View
+                  </button>
+                </td>
                 <td>
                   <div className="flex gap-2">
                     <button 

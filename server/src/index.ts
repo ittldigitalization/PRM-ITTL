@@ -1,7 +1,49 @@
+import dns from 'dns';
+import fetch from 'node-fetch';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+
+// @ts-ignore
+global.fetch = fetch;
+
+// DNS Fallback resolver for Supabase when local router DNS fails
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+  const origLookup = dns.lookup;
+  (dns as any).lookup = function (hostname: string, options: any, callback: any) {
+    let cb = callback;
+    let opts = options;
+    if (typeof options === 'function') {
+      cb = options;
+      opts = {};
+    }
+    origLookup(hostname, opts, (err: any, address: any, family: any) => {
+      if (err && hostname && hostname.includes('supabase.co')) {
+        dns.resolve4(hostname, (rErr, addrs) => {
+          if (!rErr && addrs && addrs.length > 0) {
+            if (opts && opts.all) {
+              return cb(null, addrs.map(a => ({ address: a, family: 4 })));
+            }
+            return cb(null, addrs[0], 4);
+          }
+          cb(err, address, family);
+        });
+      } else {
+        cb(err, address, family);
+      }
+    });
+  };
+} catch (e) {
+  console.warn('DNS fallback setup warning:', e);
+}
+import usersRouter from './routes/users';
+import rolesRouter from './routes/roles';
+import destinationsRouter from './routes/destinations';
+import auditRouter from './routes/audit';
+import projectsRouter from './routes/projects';
+import { requireAuth } from './middleware/auth';
 
 dotenv.config();
 
@@ -50,13 +92,22 @@ app.use(express.json({ limit: '10mb' }));
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'EPMS Server is running' });
 });
 
+// Mount RBAC APIs
+app.use('/api/users', requireAuth, usersRouter);
+app.use('/api/roles', rolesRouter);
+app.use('/api/destinations', destinationsRouter);
+app.use('/api/audit', requireAuth, auditRouter);
+app.use('/api/projects', projectsRouter);
+
 app.listen(port as number, '0.0.0.0', () => {
-  console.log(`Server running on port ${port} and accessible on all network interfaces`);
+  // Silent startup to keep command prompt clean for the user
 });

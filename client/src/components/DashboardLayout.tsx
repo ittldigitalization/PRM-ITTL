@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   LayoutDashboard, 
@@ -10,23 +10,21 @@ import {
   FileSpreadsheet, 
   DollarSign, 
   FileText, 
-  LogOut,
   FolderOpen,
   UserCircle,
-  ShieldCheck,
-  CalendarCheck,
   CreditCard,
   Archive,
   CalendarDays,
   Receipt,
-  Mail,
   Search,
-  Calendar,
-  Bell,
   Sun,
   Moon,
-  AlertCircle
+  AlertCircle,
+  Shield,
+  Mail
 } from 'lucide-react';
+
+import { usePermissions } from '../lib/AuthorizationService';
 
 const Logo = () => (
   <img src="/logo.jpg" alt="INDO TECH" style={{ height: '32px', objectFit: 'contain' }} />
@@ -42,37 +40,159 @@ const navGroups = [
   {
     title: 'PLANNING',
     items: [
-      { name: 'Projects', path: '/projects', icon: Briefcase },
-      { name: 'Milestones', path: '/milestones', icon: Target },
-      { name: 'Gantt Chart', path: '/gantt', icon: CalendarDays },
+      { name: 'Projects', path: '/projects', icon: Briefcase, destinationId: 'projects' },
+      { name: 'Milestones', path: '/milestones', icon: Target, destinationId: 'milestones' },
+      { name: 'Gantt Chart', path: '/gantt', icon: CalendarDays, destinationId: 'gantt' },
+      { name: 'Tasks', path: '/tasks', icon: CheckSquare, destinationId: 'tasks' },
     ]
   },
   {
     title: 'OPERATIONS',
     items: [
-      { name: 'Tasks', path: '/tasks', icon: CheckSquare },
-      { name: 'Issue Tracker', path: '/issues', icon: AlertCircle },
-      { name: 'Team', path: '/team', icon: Users },
-      { name: 'DPR', path: '/dpr', icon: FileSpreadsheet },
-      { name: 'Documents', path: '/documents', icon: FolderOpen },
+      { name: 'Issue Tracker', path: '/issues', icon: AlertCircle, destinationId: 'issues' },
+      { name: 'Team', path: '/team', icon: Users, destinationId: 'access_hub' },
+      { name: 'DPR', path: '/dpr', icon: FileSpreadsheet, destinationId: 'dpr' },
+      { name: 'Documents', path: '/documents', icon: FolderOpen, destinationId: 'documents' },
     ]
   },
   {
     title: 'FINANCE',
     items: [
-      { name: 'Budget', path: '/budget', icon: DollarSign },
-      { name: 'Billing', path: '/billing', icon: Receipt },
+      { name: 'Budget', path: '/budget', icon: DollarSign, destinationId: 'projects' },
+      { name: 'Billing', path: '/billing', icon: Receipt, destinationId: 'billing' },
+    ]
+  },
+  {
+    title: 'AMC MANAGEMENT',
+    items: [
+      { name: 'Vendor', path: '/customers', icon: UserCircle, destinationId: 'amc' },
+      { name: 'Dashboard', path: '/amc', icon: LayoutDashboard, destinationId: 'amc' },
+      { name: 'Contracts', path: '/amc/contracts', icon: FileText, destinationId: 'amc' },
+      { name: 'Payments', path: '/amc/payments', icon: CreditCard, destinationId: 'amc' },
+      { name: 'Documents', path: '/amc/documents', icon: FolderOpen, destinationId: 'amc' },
+      { name: 'AMC History', path: '/amc/history', icon: Archive, destinationId: 'amc' },
+    ]
+  },
+  {
+    title: 'ACCESS HUB',
+    items: [
+      { name: 'Users', path: '/admin/users', icon: Users, destinationId: 'access_hub' },
+      { name: 'Roles', path: '/admin/roles', icon: Shield, destinationId: 'access_hub' },
+      { name: 'Audit Logs', path: '/admin/audit', icon: FileText, destinationId: 'access_hub' },
+    ]
+  },
+  {
+    title: 'EMAIL CONFIGURATION',
+    items: [
+      { name: 'Email Configuration', path: '/admin/email-config', icon: Mail, destinationId: 'access_hub' },
     ]
   }
 ];
+
+const TopNavItem = ({ group, currentPath }: { group: any, currentPath: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const timeoutRef = useRef<any>(null);
+  const isActive = group.items.some((item: any) => currentPath === item.path || currentPath.startsWith(item.path + '/'));
+
+  const handleMouseEnter = () => {
+    clearTimeout(timeoutRef.current);
+    setIsOpen(true);
+  };
+  
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => setIsOpen(false), 200);
+  };
+
+  if (group.items.length === 1) {
+     return (
+       <Link to={group.items[0].path} style={{ whiteSpace: 'nowrap', color: isActive ? 'var(--accent)' : 'var(--nav-text)', fontWeight: 'bold', textDecoration: 'none', fontSize: '0.9375rem' }}>
+         {group.title}
+       </Link>
+     );
+  }
+
+  return (
+    <div 
+      style={{ position: 'relative' }} 
+      onMouseEnter={handleMouseEnter} 
+      onMouseLeave={handleMouseLeave}
+    >
+      <div style={{ whiteSpace: 'nowrap', cursor: 'pointer', color: isActive ? 'var(--accent)' : 'var(--nav-text)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.9375rem' }}>
+        {group.title}
+        <span style={{ fontSize: '10px' }}>▼</span>
+      </div>
+      
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: 'calc(100% + 15px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          padding: '0.5rem',
+          minWidth: '200px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.25rem',
+          zIndex: 100
+        }}>
+          {/* Arrow */}
+          <div style={{
+            position: 'absolute',
+            top: '-6px',
+            left: '50%',
+            transform: 'translateX(-50%) rotate(45deg)',
+            width: '12px',
+            height: '12px',
+            backgroundColor: 'var(--card)',
+            borderLeft: '1px solid var(--border)',
+            borderTop: '1px solid var(--border)',
+          }}></div>
+          
+          {group.items.map((item: any) => {
+             const isItemActive = currentPath === item.path;
+             return (
+               <Link
+                 key={item.path}
+                 to={item.path}
+                 style={{
+                   display: 'flex',
+                   alignItems: 'center',
+                   gap: '0.75rem',
+                   padding: '10px 1rem',
+                   borderRadius: '6px',
+                   color: isItemActive ? 'var(--nav-active-text)' : 'var(--nav-text)',
+                   backgroundColor: isItemActive ? 'var(--nav-active-bg)' : 'transparent',
+                   textDecoration: 'none',
+                   fontSize: '0.875rem',
+                   fontWeight: isItemActive ? 600 : 500,
+                   position: 'relative',
+                   zIndex: 2
+                 }}
+                 onMouseEnter={e => { if(!isItemActive) e.currentTarget.style.backgroundColor = 'var(--muted)' }}
+                 onMouseLeave={e => { if(!isItemActive) e.currentTarget.style.backgroundColor = 'transparent' }}
+               >
+                 <item.icon size={16} style={{ color: isItemActive ? 'var(--accent)' : 'inherit' }} />
+                 {item.name}
+               </Link>
+             )
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isAmcOpen, setIsAmcOpen] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -135,141 +255,16 @@ export default function DashboardLayout() {
     return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
   }
 
-  // Format today's date for the Calendar Trigger
-  const today = new Date();
-  const dayStr = today.getDate().toString().padStart(2, '0');
-  const monthStr = today.toLocaleString('default', { month: 'short' }).toUpperCase();
+  // Filter navigation groups based on permissions
+  const filteredNavGroups = navGroups.map(group => {
+    return {
+      ...group,
+      items: group.items.filter((item: any) => !item.destinationId || hasPermission(item.destinationId, 'READ'))
+    };
+  }).filter(group => group.items.length > 0);
 
   return (
     <div className="app-container">
-      {/* Sidebar */}
-      <aside style={{
-        width: 'var(--sidebar-width)',
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 10,
-        backgroundColor: 'var(--sidebar-bg)',
-        borderRight: '1px solid var(--border)',
-        transition: 'background-color 0.3s ease, border-color 0.3s ease'
-      }}>
-        <div style={{ height: 'var(--header-height)', display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderBottom: '1px solid var(--border)' }}>
-          <Logo />
-        </div>
-        <nav style={{ flex: 1, padding: '1.5rem 1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          
-          {navGroups.map((group, index) => (
-            <div key={group.title} style={{ marginTop: index === 0 ? '0' : '2rem', marginBottom: '0.5rem' }}>
-              <p className="small-caps" style={{ 
-                color: 'var(--muted-foreground)', 
-                padding: '0 1rem',
-                marginBottom: '0.75rem'
-              }}>
-                {group.title}
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                {group.items.map((item) => {
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.path}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        padding: '12px 1rem',
-                        borderRadius: '6px',
-                        color: isActive ? 'var(--nav-active-text)' : 'var(--nav-text)',
-                        backgroundColor: isActive ? 'var(--nav-active-bg)' : 'transparent',
-                        fontWeight: isActive ? 600 : 500,
-                        transition: 'all 0.2s ease-out',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isActive) {
-                          e.currentTarget.style.color = 'var(--nav-text-hover)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isActive) {
-                          e.currentTarget.style.color = 'var(--nav-text)';
-                        }
-                      }}
-                    >
-                      <item.icon size={18} style={{ color: isActive ? 'var(--accent)' : 'inherit', transition: 'color 0.2s ease-out' }} />
-                      <span style={{ fontSize: '0.9375rem' }}>{item.name}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-            
-          {/* AMC Management Collapsible Menu */}
-          <div style={{ marginTop: '2rem' }}>
-            <button 
-              onClick={() => setIsAmcOpen(!isAmcOpen)}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 1rem',
-                borderRadius: '6px',
-                color: location.pathname.startsWith('/amc') ? 'var(--nav-active-text)' : 'var(--nav-text)',
-                backgroundColor: location.pathname.startsWith('/amc') ? 'var(--nav-active-bg)' : 'transparent',
-                fontWeight: location.pathname.startsWith('/amc') ? 600 : 500,
-                transition: 'all 0.2s ease-out',
-                cursor: 'pointer',
-                border: 'none',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <ShieldCheck size={18} style={{ color: location.pathname.startsWith('/amc') ? 'var(--accent)' : 'inherit' }} />
-                <span style={{ fontSize: '0.9375rem' }}>AMC Management</span>
-              </div>
-              <span style={{ fontSize: '10px' }}>{isAmcOpen ? '▼' : '▶'}</span>
-            </button>
-            
-            {isAmcOpen && (
-              <div style={{ marginLeft: '1rem', paddingLeft: '1rem', borderLeft: '1px solid var(--border)', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                {[
-                  { name: 'Vendor', path: '/customers', icon: UserCircle },
-                  { name: 'Dashboard', path: '/amc', icon: LayoutDashboard },
-                  { name: 'Contracts', path: '/amc/contracts', icon: FileText },
-                  { name: 'Payments', path: '/amc/payments', icon: CreditCard },
-                  { name: 'Documents', path: '/amc/documents', icon: FolderOpen },
-                  { name: 'AMC History', path: '/amc/history', icon: Archive },
-                ].map(item => {
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <Link key={item.path} to={item.path} style={{
-                      display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '8px 1rem', borderRadius: '6px',
-                      color: isActive ? 'var(--nav-active-text)' : 'var(--nav-text)', fontSize: '0.875rem',
-                      backgroundColor: isActive ? 'var(--nav-active-bg)' : 'transparent',
-                    }}>
-                      <item.icon size={16} style={{ color: isActive ? 'var(--accent)' : 'inherit' }} /> {item.name}
-                    </Link>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        </nav>
-
-        <div style={{ padding: '1.5rem', borderTop: '1px solid var(--border)' }}>
-          
-          <button 
-            onClick={handleLogout}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--muted-foreground)', fontWeight: 500, fontSize: '0.9375rem', transition: 'color 0.2s ease', border: 'none', background: 'transparent', cursor: 'pointer' }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--nav-text-hover)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--muted-foreground)'}
-          >
-            <LogOut size={18} />
-            Logout
-          </button>
-        </div>
-      </aside>
-
       {/* Main Content */}
       <main className="main-content">
         {/* Header */}
@@ -281,24 +276,35 @@ export default function DashboardLayout() {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 2.5rem',
-          zIndex: 5,
+          zIndex: 50,
           position: 'sticky',
           top: 0,
           transition: 'background-color 0.3s ease, border-color 0.3s ease'
         }}>
-          {/* Left: Profile Trigger */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--card)', border: '1px solid var(--border)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-              {user?.email ? user.email.substring(0, 2).toUpperCase() : 'UN'}
-            </div>
-            <div>
-              <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--foreground)' }}>{user?.email || 'User'}</p>
-              <p className="small-caps" style={{ color: 'var(--muted-foreground)', marginTop: '2px' }}>Project Manager</p>
-            </div>
+          {/* Left: Logo & Navigation */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
+            <Logo />
+            
+            {/* Top Navigation */}
+            <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+               {filteredNavGroups.map(group => (
+                 <TopNavItem key={group.title} group={group} currentPath={location.pathname} />
+               ))}
+            </nav>
           </div>
           
           {/* Right: Search bar and Utilities */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            
+            <button 
+              onClick={handleLogout}
+              style={{ color: 'var(--accent-foreground)', backgroundColor: 'var(--accent)', fontWeight: 'bold', fontSize: '0.875rem', padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'background-color 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--accent-secondary)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--accent)'}
+            >
+              Logout
+            </button>
+
             {/* Search Bar */}
             <div style={{ position: 'relative', width: '256px' }}>
               <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-foreground)' }} />
@@ -326,43 +332,12 @@ export default function DashboardLayout() {
               {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
 
-            <button style={{ color: 'var(--muted-foreground)', padding: '0.5rem', borderRadius: '50%', backgroundColor: 'var(--card)', border: '1px solid var(--border)', cursor: 'pointer' }}>
-              <Bell size={18} />
-            </button>
-            
-            {/* Calendar Trigger */}
-            <button style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '180px',
-              backgroundColor: 'var(--card)',
-              border: '1px solid var(--border)',
-              borderRadius: '6px',
-              padding: '6px 6px 6px 16px',
-              transition: 'all 0.2s ease-out',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--ring)'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <span className="small-caps" style={{ color: 'var(--muted-foreground)' }}>Today</span>
-                <span className="serif-heading" style={{ fontSize: '1rem', color: 'var(--foreground)', fontWeight: 600 }}>{dayStr} {monthStr}</span>
+            {/* Profile Trigger */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--card)', border: '1px solid var(--border)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                {user?.email ? user.email.substring(0, 2).toUpperCase() : 'UN'}
               </div>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--muted)',
-                color: 'var(--accent)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Calendar size={16} />
-              </div>
-            </button>
+            </div>
           </div>
         </header>
 

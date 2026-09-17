@@ -1,4 +1,4 @@
-import { Briefcase, CalendarDays, CheckSquare, DollarSign, PieChart as PieChartIcon, BarChart2 } from 'lucide-react';
+import { PieChart as PieChartIcon, BarChart2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -62,15 +62,17 @@ export default function Dashboard() {
 
   const overallBudget = projects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0);
   const actualCost = projects.reduce((sum, p) => sum + (Number(p.actual_cost) || 0), 0);
-  const remainingBudget = overallBudget - actualCost;
   
   const activeMilestones = milestones.filter(m => m.status === 'In Progress' || m.status === 'Not Started').length;
   const tasksInProgress = tasks.filter(t => t.status === 'In Progress').length;
   const tasksCompleted = tasks.filter(t => t.status === 'Completed').length;
 
-  // Compute Upcoming Deadlines by looking at uncompleted tasks with end_dates close to today
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Compute Upcoming Deadlines by looking at uncompleted tasks with end_dates >= today
   const upcomingDeadlines = [...tasks]
-    .filter(t => t.status !== 'Completed' && t.end_date)
+    .filter(t => t.status !== 'Completed' && t.end_date && new Date(t.end_date) >= today)
     .sort((a, b) => new Date(a.end_date).getTime() - new Date(b.end_date).getTime())
     .slice(0, 4);
 
@@ -122,9 +124,6 @@ export default function Dashboard() {
               <p className="text-sm font-medium text-muted">Total Projects</p>
               <h3 className="text-3xl mt-1 text-slate-800">{projects.length}</h3>
             </div>
-            <div className="p-3 rounded-xl bg-blue-50 text-blue-700 shadow-sm">
-              <Briefcase size={24} />
-            </div>
           </div>
           <div className="text-sm flex items-center gap-1">
             <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-md text-xs">+Active tracking</span>
@@ -136,9 +135,6 @@ export default function Dashboard() {
             <div>
               <p className="text-sm font-medium text-muted">Active Milestones</p>
               <h3 className="text-3xl mt-1 text-slate-800">{activeMilestones}</h3>
-            </div>
-            <div className="p-3 rounded-xl bg-warning/10 text-warning shadow-sm">
-              <CalendarDays size={24} />
             </div>
           </div>
           <div className="text-sm">
@@ -152,9 +148,6 @@ export default function Dashboard() {
               <p className="text-sm font-medium text-muted">Total Tasks</p>
               <h3 className="text-3xl mt-1 text-slate-800">{tasks.length}</h3>
             </div>
-            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700 shadow-sm">
-              <CheckSquare size={24} />
-            </div>
           </div>
           <div className="text-sm flex items-center gap-2">
             <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md text-xs">{tasksCompleted} completed</span>
@@ -165,13 +158,10 @@ export default function Dashboard() {
         <div className="card glass-card">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-sm font-medium text-muted">Remaining Budget</p>
+              <p className="text-sm font-medium text-muted">Total Amount</p>
               <h3 className="text-3xl mt-1 text-slate-800">
-                {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(remainingBudget)}
+                {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(overallBudget)}
               </h3>
-            </div>
-            <div className="p-3 rounded-xl" style={{ backgroundColor: '#f3e8ff', color: '#9333ea' }}>
-              <DollarSign size={24} />
             </div>
           </div>
           <div className="text-sm">

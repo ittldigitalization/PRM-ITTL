@@ -5,8 +5,10 @@ import { supabase } from '../lib/supabase';
 interface Customer {
   id: string;
   name: string;
+  email: string;
   phone: string;
   address: string;
+  contact_person: string;
 }
 
 export default function CustomerManagement() {
@@ -34,7 +36,7 @@ export default function CustomerManagement() {
 
   const fetchCustomers = async () => {
     try {
-      setLoading(true);
+
       const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       setCustomers(data || []);
@@ -55,7 +57,9 @@ export default function CustomerManagement() {
     const dbCustomer = {
       name: currentCustomer.name,
       phone: currentCustomer.phone,
-      address: currentCustomer.address
+      address: currentCustomer.address,
+      contact_person: currentCustomer.contact_person,
+      email: currentCustomer.email
     };
 
     try {
@@ -116,6 +120,8 @@ export default function CustomerManagement() {
           <thead>
             <tr>
               <th>Vendor Name</th>
+              <th>Contact Person</th>
+              <th>Email</th>
               <th>Phone</th>
               <th>Actions</th>
             </tr>
@@ -124,6 +130,8 @@ export default function CustomerManagement() {
             {filteredCustomers.map(customer => (
               <tr key={customer.id}>
                 <td className="font-medium">{customer.name}</td>
+                <td>{customer.contact_person || '-'}</td>
+                <td>{customer.email || '-'}</td>
                 <td>{customer.phone || '-'}</td>
                 <td>
                   <div className="flex gap-2">
@@ -157,12 +165,12 @@ export default function CustomerManagement() {
             ))}
             {loading && (
               <tr>
-                <td colSpan={3} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading vendors...</td>
+                <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading vendors...</td>
               </tr>
             )}
             {!loading && filteredCustomers.length === 0 && (
               <tr>
-                <td colSpan={3} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">
+                <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">
                   No vendors found.
                 </td>
               </tr>
@@ -194,13 +202,34 @@ export default function CustomerManagement() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Phone</label>
+                <label className="form-label">Contact Person</label>
                 <input 
                   type="text" 
                   className="form-input" 
-                  value={currentCustomer.phone || ''} 
-                  onChange={e => setCurrentCustomer({...currentCustomer, phone: e.target.value})} 
+                  value={currentCustomer.contact_person || ''} 
+                  onChange={e => setCurrentCustomer({...currentCustomer, contact_person: e.target.value})} 
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-group">
+                  <label className="form-label">Email</label>
+                  <input 
+                    type="email" 
+                    className="form-input" 
+                    value={currentCustomer.email || ''} 
+                    onChange={e => setCurrentCustomer({...currentCustomer, email: e.target.value})} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Phone</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={currentCustomer.phone || ''} 
+                    onChange={e => setCurrentCustomer({...currentCustomer, phone: e.target.value})} 
+                  />
+                </div>
               </div>
 
               <div className="form-group">

@@ -16,7 +16,12 @@ if not exist package.json (
     exit /b
 )
 
+REM Suppress node warnings and extra logs
+set NODE_OPTIONS=--no-warnings
+set DOTENV_CONFIG_QUIET=true
+set DOTENVX_LOG_LEVEL=error
+
 REM Build and Start the Application for the Network
-npm start
+npm start --silent
 
 pause

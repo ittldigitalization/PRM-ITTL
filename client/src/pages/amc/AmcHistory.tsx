@@ -24,7 +24,7 @@ export default function AmcHistory() {
 
   const fetchHistory = async () => {
     try {
-      setLoading(true);
+
       // Fetch all contracts sorted by customer name and start date
       const { data, error } = await supabase
         .from('amc_contracts')
@@ -69,6 +69,16 @@ export default function AmcHistory() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
+        >
+          Back
+        </button>
       </div>
 
       <div className="table-container">

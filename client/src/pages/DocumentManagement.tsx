@@ -47,7 +47,7 @@ export default function DocumentManagement() {
 
   const fetchDocuments = async () => {
     try {
-      setLoading(true);
+
       const { data, error } = await supabase.from('documents').select('*, projects(name, code), milestones(name)').order('upload_date', { ascending: false });
       if (error) throw error;
 
@@ -263,6 +263,16 @@ export default function DocumentManagement() {
             )}
           </div>
         </div>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
+        >
+          Back
+        </button>
       </div>
 
       <div className="card glass-card" style={{ padding: '1.5rem' }}>

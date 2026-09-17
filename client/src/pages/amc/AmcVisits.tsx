@@ -30,7 +30,7 @@ export default function AmcVisits() {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
+
       const [visitsRes, contractsRes, usersRes] = await Promise.all([
         supabase.from('amc_visits').select('*, amc_contracts(amc_number, customers(name)), users(username)').order('visit_date', { ascending: false }),
         supabase.from('amc_contracts').select('id, amc_number, customers(name)'),
@@ -125,6 +125,16 @@ export default function AmcVisits() {
         >
           <Plus size={18} style={{ marginRight: '0.5rem' }} />
           Log Visit
+        </button>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
+        >
+          Back
         </button>
       </div>
 

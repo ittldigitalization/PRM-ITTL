@@ -44,7 +44,7 @@ export default function DPR() {
 
   const fetchRecords = async () => {
     try {
-      setLoading(true);
+
       const { data, error } = await supabase.from('dprs').select('*, projects(name)').order('created_at', { ascending: false });
       if (error) throw error;
 
@@ -151,6 +151,16 @@ export default function DPR() {
         >
           <Plus size={18} style={{ marginRight: '0.5rem' }} />
           Log Progress
+        </button>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
+        >
+          Back
         </button>
       </div>
 

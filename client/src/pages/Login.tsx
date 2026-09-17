@@ -26,6 +26,7 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -39,22 +40,43 @@ export default function Login() {
       return;
     }
     
+    setIsSubmitting(true);
+    setError('');
+
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      console.log('Attempting to sign in...', username);
+      
+      // Wrap in a timeout to catch network or navigator.locks hangs
+      const signInPromise = supabase.auth.signInWithPassword({
         email: username,
         password: password,
       });
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Login request timed out. If you are stuck, please try clearing your browser cookies/site data, or open an Incognito window. (This can be caused by a stalled browser lock or firewall).')), 8000);
+      });
+      
+      const result: any = await Promise.race([signInPromise, timeoutPromise]);
+      const { data, error: signInError } = result;
+
+      console.log('Sign in response:', { data, error: signInError });
 
       if (signInError) {
         setError(signInError.message);
+        setIsSubmitting(false);
         return;
       }
 
       if (data.user) {
         navigate('/');
+      } else {
+        setError('Login failed: No user data returned');
+        setIsSubmitting(false);
       }
     } catch (err: any) {
+      console.error('Login exception:', err);
       setError(err.message || 'An error occurred during login');
+      setIsSubmitting(false);
     }
   };
 
@@ -238,20 +260,19 @@ export default function Login() {
 
             <button 
               type="submit" 
+              disabled={isSubmitting}
               style={{ 
-                width: '100%', padding: '1rem', backgroundColor: '#e3282f', color: 'white',
+                width: '100%', padding: '1rem', backgroundColor: isSubmitting ? '#f87171' : '#e3282f', color: 'white',
                 border: 'none', borderRadius: '0.5rem', fontSize: '1rem', fontWeight: 600,
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                cursor: isSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
                 transition: 'all 0.2s ease',
                 boxShadow: '0 4px 12px rgba(227, 40, 47, 0.3)'
               }}
-              onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#c81e24'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(227, 40, 47, 0.4)'; }}
-              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#e3282f'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(227, 40, 47, 0.3)'; }}
-              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-              onMouseUp={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+              onMouseOver={(e) => { if (!isSubmitting) { e.currentTarget.style.backgroundColor = '#c81e24'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(227, 40, 47, 0.4)'; } }}
+              onMouseOut={(e) => { if (!isSubmitting) { e.currentTarget.style.backgroundColor = '#e3282f'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(227, 40, 47, 0.3)'; } }}
             >
               <LogIn size={20} />
-              Sign in to Dashboard
+              {isSubmitting ? 'Signing in...' : 'Sign in to Dashboard'}
             </button>
           </form>
         </div>

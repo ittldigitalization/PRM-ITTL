@@ -18,7 +18,7 @@ export default function BudgetManagement() {
 
   const fetchProjects = async () => {
     try {
-      setLoading(true);
+
       const { data: projectsData, error: projectsError } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
       if (projectsError) throw projectsError;
 

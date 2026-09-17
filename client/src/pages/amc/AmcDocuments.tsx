@@ -47,7 +47,7 @@ export default function AmcDocuments() {
 
   const fetchDocuments = async () => {
     try {
-      setLoading(true);
+
       const { data, error } = await supabase.from('amc_documents').select('*, amc_contracts(amc_number, customers(name))').order('upload_date', { ascending: false });
       if (error) throw error;
 
@@ -192,6 +192,16 @@ export default function AmcDocuments() {
         >
           <Upload size={18} style={{ marginRight: '0.5rem' }} />
           Upload Document
+        </button>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
+        >
+          Back
         </button>
       </div>
 

@@ -5,9 +5,9 @@ import { supabase } from '../../lib/supabase';
 export default function AmcContracts() {
   const [contracts, setContracts] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
-  const [engineers, setEngineers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [amountFilter, setAmountFilter] = useState('All');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -32,16 +32,14 @@ export default function AmcContracts() {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
-      const [contractsRes, customersRes, usersRes] = await Promise.all([
-        supabase.from('amc_contracts').select('*, customers(name), users(username)').order('created_at', { ascending: false }),
-        supabase.from('customers').select('id, name'),
-        supabase.from('users').select('id, username').eq('status', 'Active')
+
+      const [contractsRes, customersRes] = await Promise.all([
+        supabase.from('amc_contracts').select('*, customers(name), amc_payments(*)').order('created_at', { ascending: false }),
+        supabase.from('customers').select('id, name')
       ]);
 
       setContracts(contractsRes.data || []);
       setCustomers(customersRes.data || []);
-      setEngineers(usersRes.data || []);
     } catch (error) {
       console.error('Error fetching AMC contracts:', error);
     } finally {
@@ -49,11 +47,38 @@ export default function AmcContracts() {
     }
   };
 
-  const filteredContracts = contracts.filter(c => 
-    c.amc_number.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    c.contract_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.customers?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredContracts = contracts.map(c => {
+    const totalBaseAmount = c.amc_payments?.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0) || 0;
+    
+    // Calculate the paid amount excluding GST (proportional to base amount)
+    const paidAmount = c.amc_payments?.reduce((sum: number, p: any) => {
+      const amount = Number(p.amount) || 0;
+      const gst = Number(p.gst) || 0;
+      const paid = Number(p.paid_amount) || 0;
+      const totalInvoiced = amount + gst;
+      
+      let basePaid = 0;
+      if (paid > 0 && totalInvoiced > 0) {
+        basePaid = (paid / totalInvoiced) * amount;
+      }
+      return sum + Math.round(basePaid);
+    }, 0) || 0;
+
+    const contractAmount = Number(c.contract_amount) || 0;
+    const balanceAmount = contractAmount - totalBaseAmount;
+    return { ...c, totalBaseAmount, paidAmount, balanceAmount };
+  }).filter(c => {
+    const matchesSearch = c.amc_number.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          c.contract_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          c.customers?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchesAmount = true;
+    if (amountFilter === 'Under 10k') matchesAmount = c.contract_amount < 10000;
+    else if (amountFilter === '10k-50k') matchesAmount = c.contract_amount >= 10000 && c.contract_amount <= 50000;
+    else if (amountFilter === 'Over 50k') matchesAmount = c.contract_amount > 50000;
+
+    return matchesSearch && matchesAmount;
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -192,12 +217,35 @@ export default function AmcContracts() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        <div className="flex gap-4">
+          <select 
+            className="form-input" 
+            value={amountFilter}
+            onChange={(e) => setAmountFilter(e.target.value)}
+            style={{ width: '200px' }}
+          >
+            <option value="All">All Amounts</option>
+            <option value="Under 10k">Under ₹10,000</option>
+            <option value="10k-50k">₹10,000 - ₹50,000</option>
+            <option value="Over 50k">Over ₹50,000</option>
+          </select>
+          <button 
+            className="btn btn-primary"
+            onClick={() => { setCurrentContract({ status: 'Active' }); setIsModalOpen(true); }}
+          >
+            <Plus size={18} style={{ marginRight: '0.5rem' }} />
+            New AMC Contract
+          </button>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
         <button 
           className="btn btn-primary"
-          onClick={() => { setCurrentContract({ status: 'Active' }); setIsModalOpen(true); }}
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
         >
-          <Plus size={18} style={{ marginRight: '0.5rem' }} />
-          New AMC Contract
+          Back
         </button>
       </div>
 
@@ -209,7 +257,12 @@ export default function AmcContracts() {
               <th>Vendor</th>
               <th>Contract Name</th>
               <th>Duration</th>
-              <th>Amount</th>
+              <th>Service Frequency</th>
+              <th>Total Budget</th>
+              <th>Total Base Amount</th>
+              <th>Paid Bill Amount</th>
+              <th>Balance Amount</th>
+              <th>Remarks</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -221,7 +274,14 @@ export default function AmcContracts() {
                 <td className="font-medium">{contract.customers?.name || '-'}</td>
                 <td>{contract.contract_name}</td>
                 <td>{contract.start_date} to {contract.end_date}</td>
-                <td>₹{Number(contract.contract_amount).toLocaleString()}</td>
+                <td>{contract.service_frequency || '-'}</td>
+                <td className="font-medium">₹{Number(contract.contract_amount).toLocaleString()}</td>
+                <td className="text-purple-600 font-medium">₹{contract.totalBaseAmount.toLocaleString()}</td>
+                <td className="text-emerald-600 font-medium">₹{contract.paidAmount.toLocaleString()}</td>
+                <td className={contract.balanceAmount > 0 ? "text-orange-600 font-medium" : "text-slate-500 font-medium"}>
+                  ₹{contract.balanceAmount.toLocaleString()}
+                </td>
+                <td className="truncate max-w-[200px]" title={contract.notes || ''}>{contract.notes || '-'}</td>
                 <td>{getStatusBadge(contract.status)}</td>
                 <td>
                   <div className="flex gap-2">
@@ -263,12 +323,12 @@ export default function AmcContracts() {
             ))}
             {loading && (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading AMC contracts...</td>
+                <td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading AMC contracts...</td>
               </tr>
             )}
             {!loading && filteredContracts.length === 0 && (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">
+                <td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">
                   No AMC contracts found.
                 </td>
               </tr>
@@ -386,10 +446,10 @@ export default function AmcContracts() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Notes</label>
+                <label className="form-label">Remarks</label>
                 <textarea 
                   className="form-input" 
-                  style={{ minHeight: '80px' }}
+                  rows={4}
                   value={currentContract.notes || ''} 
                   onChange={e => setCurrentContract({...currentContract, notes: e.target.value})} 
                 />
@@ -524,6 +584,15 @@ export default function AmcContracts() {
                     ₹{Number(currentContract.contract_amount).toLocaleString()}
                   </div>
                 </div>
+                
+                {currentContract.notes && (
+                  <div className="col-span-2">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Remarks</p>
+                    <div className="text-sm text-slate-700 bg-slate-50 px-3 py-3 rounded-lg border border-slate-200 whitespace-pre-wrap">
+                      {currentContract.notes}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

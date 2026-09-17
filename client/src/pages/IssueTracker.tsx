@@ -42,7 +42,7 @@ export default function IssueTracker() {
 
   const fetchIssues = async () => {
     try {
-      setLoading(true);
+
       const { data, error } = await supabase.from('issues').select('*').order('created_at', { ascending: false });
       if (error) throw error;
 
@@ -352,6 +352,16 @@ export default function IssueTracker() {
             Report Issue
           </button>
         </div>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
+        >
+          Back
+        </button>
       </div>
 
       <div className="table-container">

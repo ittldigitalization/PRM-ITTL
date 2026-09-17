@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 type ProjectStatus = 'Started' | 'In Progress' | 'Completed';
 
@@ -26,6 +27,7 @@ interface Project {
 }
 
 export default function ProjectManagement() {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -279,6 +281,16 @@ export default function ProjectManagement() {
         </div>
       </div>
 
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
+        >
+          Back
+        </button>
+      </div>
+
       <div className="table-container">
         <table className="data-table">
           <thead>
@@ -290,6 +302,7 @@ export default function ProjectManagement() {
               <th>Start Date</th>
               <th>Progress</th>
               <th>Status</th>
+              <th>Milestones</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -314,6 +327,15 @@ export default function ProjectManagement() {
                   </div>
                 </td>
                 <td>{getStatusBadge(project.status as ProjectStatus, project.id)}</td>
+                <td>
+                  <button 
+                    className="btn btn-outline" 
+                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)' }} 
+                    onClick={() => navigate('/milestones', { state: { projectId: project.id } })}
+                  >
+                    View
+                  </button>
+                </td>
                 <td>
                   <div className="flex gap-2">
                     <button 

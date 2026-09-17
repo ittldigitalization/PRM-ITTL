@@ -29,10 +29,10 @@ export default function AmcPayments() {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
+
       const [paymentsRes, contractsRes] = await Promise.all([
-        supabase.from('amc_payments').select('*, amc_contracts(amc_number, customers(name))').order('created_at', { ascending: false }),
-        supabase.from('amc_contracts').select('id, amc_number, customers(name)')
+        supabase.from('amc_payments').select('*, amc_contracts(amc_number, contract_name, customers(name))').order('created_at', { ascending: false }),
+        supabase.from('amc_contracts').select('id, amc_number, contract_amount, customers(name), amc_payments(amount, gst, paid_amount)')
       ]);
 
       setPayments(paymentsRes.data || []);
@@ -75,6 +75,8 @@ export default function AmcPayments() {
     const dbPayment = {
       amc_id: currentPayment.amc_id,
       invoice_number: currentPayment.invoice_number,
+      invoice_reference: currentPayment.invoice_reference,
+      po_number: currentPayment.po_number || null,
       invoice_date: currentPayment.invoice_date,
       amount: amt,
       gst: gst,
@@ -98,6 +100,16 @@ export default function AmcPayments() {
       console.error('Error saving payment:', error);
       alert('Failed to save payment: ' + (error.message || JSON.stringify(error)));
     }
+  };
+
+  const handleAmountChange = (field: string, value: string) => {
+    const newPayment = { ...currentPayment, [field]: value };
+    if (field === 'amount' || field === 'gst') {
+      const amt = field === 'amount' ? Number(value) : (Number(currentPayment.amount) || 0);
+      const gst = field === 'gst' ? Number(value) : (Number(currentPayment.gst) || 0);
+      newPayment.paid_amount = amt + gst;
+    }
+    setCurrentPayment(newPayment);
   };
 
   const handleDelete = async (id: string) => {
@@ -136,13 +148,26 @@ export default function AmcPayments() {
         </button>
       </div>
 
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
+        >
+          Back
+        </button>
+      </div>
+
       <div className="table-container">
         <table className="data-table">
           <thead>
             <tr>
               <th>Date</th>
               <th>Invoice No</th>
+              <th>PO Number</th>
+              <th>Reference</th>
               <th>AMC Number / Customer</th>
+              <th>Contract Name</th>
               <th>Total Amount</th>
               <th>Paid Amount</th>
               <th>Balance</th>
@@ -155,10 +180,13 @@ export default function AmcPayments() {
               <tr key={payment.id}>
                 <td className="font-medium">{payment.invoice_date}</td>
                 <td className="font-bold text-primary">{payment.invoice_number}</td>
+                <td>{payment.po_number || '-'}</td>
+                <td>{payment.invoice_reference || '-'}</td>
                 <td>
                   {payment.amc_contracts?.amc_number} <br/>
                   <span className="text-xs text-muted-foreground">{payment.amc_contracts?.customers?.name}</span>
                 </td>
+                <td>{payment.amc_contracts?.contract_name || '-'}</td>
                 <td>₹{(Number(payment.amount) + Number(payment.gst)).toLocaleString()}</td>
                 <td className="text-emerald-600 font-medium">₹{Number(payment.paid_amount).toLocaleString()}</td>
                 <td className={Number(payment.balance) > 0 ? "text-rose-600 font-medium" : ""}>
@@ -222,6 +250,29 @@ export default function AmcPayments() {
             </div>
             
             <form onSubmit={handleSave} className="flex flex-col gap-4">
+              
+              {/* Calculate dynamic balances */}
+              {(() => {
+                const liveAmt = Number(currentPayment.amount) || 0;
+                const liveGst = Number(currentPayment.gst) || 0;
+                const livePaid = Number(currentPayment.paid_amount) || 0;
+                const liveBalance = (liveAmt + liveGst) - livePaid;
+                
+                const selectedContract = contracts.find(c => c.id === currentPayment.amc_id);
+                let contractRemaining = 0;
+                let contractTotal = 0;
+                if (selectedContract) {
+                  const pastInvoiced = selectedContract.amc_payments?.reduce((s: number, p: any) => s + (Number(p.amount) || 0), 0) || 0;
+                  contractTotal = Number(selectedContract.contract_amount) || 0;
+                  
+                  // If we are editing an existing payment, we shouldn't double count its previous invoiced amount against the remaining balance
+                  const currentPaymentOldInvoiced = currentPayment.id ? (Number(currentPayment.amount) || 0) : 0;
+                  
+                  contractRemaining = contractTotal - pastInvoiced + currentPaymentOldInvoiced;
+                }
+
+                return (
+                  <>
               <div className="form-group">
                 <label className="form-label">AMC Contract</label>
                 <select 
@@ -233,6 +284,12 @@ export default function AmcPayments() {
                   <option value="">Select Contract...</option>
                   {contracts.map(c => <option key={c.id} value={c.id}>{c.amc_number} - {c.customers?.name}</option>)}
                 </select>
+                {selectedContract && (
+                  <div className="mt-2 p-2 bg-blue-50 text-blue-800 text-sm rounded border border-blue-100 flex justify-between">
+                    <span>Contract Budget: <b>₹{contractTotal.toLocaleString()}</b></span>
+                    <span>Remaining to Bill: <b>₹{contractRemaining.toLocaleString()}</b></span>
+                  </div>
+                )}
               </div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -244,6 +301,26 @@ export default function AmcPayments() {
                     className="form-input" 
                     value={currentPayment.invoice_number || ''} 
                     onChange={e => setCurrentPayment({...currentPayment, invoice_number: e.target.value})} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">PO Number</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={currentPayment.po_number || ''} 
+                    onChange={e => setCurrentPayment({...currentPayment, po_number: e.target.value})} 
+                    placeholder="PO-XXXX"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Invoice Reference</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={currentPayment.invoice_reference || ''} 
+                    onChange={e => setCurrentPayment({...currentPayment, invoice_reference: e.target.value})} 
+                    placeholder="Optional"
                   />
                 </div>
                 <div className="form-group">
@@ -267,7 +344,7 @@ export default function AmcPayments() {
                     step="0.01"
                     className="form-input" 
                     value={currentPayment.amount || ''} 
-                    onChange={e => setCurrentPayment({...currentPayment, amount: e.target.value})} 
+                    onChange={e => handleAmountChange('amount', e.target.value)} 
                   />
                 </div>
                 <div className="form-group">
@@ -277,7 +354,7 @@ export default function AmcPayments() {
                     step="0.01"
                     className="form-input" 
                     value={currentPayment.gst || ''} 
-                    onChange={e => setCurrentPayment({...currentPayment, gst: e.target.value})} 
+                    onChange={e => handleAmountChange('gst', e.target.value)} 
                   />
                 </div>
               </div>
@@ -308,6 +385,13 @@ export default function AmcPayments() {
                   <p className="text-xs text-muted-foreground mt-1">Leave as is for auto-calculation based on balance.</p>
                 </div>
               </div>
+
+              <div className="p-3 bg-slate-50 border rounded-lg flex justify-between items-center">
+                <span className="font-bold text-slate-700">Live Invoice Balance:</span>
+                <span className={`text-lg font-bold ${liveBalance > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                  ₹{liveBalance.toLocaleString()}
+                </span>
+              </div>
               
               <div className="flex justify-end gap-2" style={{ marginTop: '1rem' }}>
                 <button type="button" className="btn btn-outline" onClick={() => setIsModalOpen(false)}>
@@ -317,6 +401,9 @@ export default function AmcPayments() {
                   Save Payment
                 </button>
               </div>
+                  </>
+                );
+              })()}
             </form>
           </div>
         </div>

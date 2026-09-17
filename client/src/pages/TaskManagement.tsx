@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X, File } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useLocation } from 'react-router-dom';
 
 type Tab = 'individual' | 'team';
 type TaskStatus = 'Started' | 'In Progress' | 'Blocked' | 'Completed';
@@ -67,7 +68,7 @@ export default function TaskManagement() {
 
   const fetchTasks = async () => {
     try {
-      setLoading(true);
+
       const { data, error } = await supabase.from('tasks').select('*, projects(name, code), milestones(name)').order('created_at', { ascending: false });
       if (error) throw error;
 
@@ -104,24 +105,36 @@ export default function TaskManagement() {
     }
   };
 
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>('individual');
   const [searchTerm, setSearchTerm] = useState('');
-  const [projectFilter, setProjectFilter] = useState('All');
-  const [milestoneFilter, setMilestoneFilter] = useState('All');
+  const [projectFilter, setProjectFilter] = useState(location.state?.projectId || 'All');
+  const [milestoneFilter, setMilestoneFilter] = useState(location.state?.milestoneName || 'All');
   const [assignedToFilter, setAssignedToFilter] = useState('All');
+
+  useEffect(() => {
+    if (location.state?.projectId) {
+      setProjectFilter(location.state.projectId);
+    }
+    if (location.state?.milestoneName) {
+      setMilestoneFilter(location.state.milestoneName);
+    }
+  }, [location.state]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   
   const [currentTask, setCurrentTask] = useState<Partial<Task>>({ type: 'Individual', status: 'Started' });
 
   const uniqueMilestones = Array.from(new Set(tasks.map(t => t.milestoneName).filter(Boolean)));
-  const uniqueAssignees = Array.from(new Set(tasks.map(t => t.assignedTo).filter(Boolean)));
+  const uniqueAssignees = Array.from(new Set(
+    tasks.flatMap(t => (t.assignedTo || '').split(',').map(s => s.trim()).filter(Boolean))
+  ));
 
   const filteredTasks = tasks.filter(t => 
     (activeTab === 'individual' ? t.type === 'Individual' : t.type === 'Team') &&
     (projectFilter === 'All' || t.projectId === projectFilter) &&
     (milestoneFilter === 'All' || t.milestoneName === milestoneFilter) &&
-    (assignedToFilter === 'All' || t.assignedTo === assignedToFilter) &&
+    (assignedToFilter === 'All' || (t.assignedTo && t.assignedTo.split(',').map(s => s.trim()).includes(assignedToFilter))) &&
     (t.title.toLowerCase().includes(searchTerm.toLowerCase()) || t.projectName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -386,6 +399,16 @@ export default function TaskManagement() {
         </div>
       </div>
 
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.history.back()}
+          style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: 'var(--primary)', color: 'white' }}
+        >
+          Back
+        </button>
+      </div>
+
       <div className="table-container">
         <table className="data-table">
           <thead>
@@ -634,6 +657,7 @@ export default function TaskManagement() {
                 <div className="form-group flex-1">
                   <label className="form-label">Upload Document</label>
                   <input 
+                    key={currentTask.documentUrl ? 'has-file' : 'no-file'}
                     type="file" 
                     className="form-input" 
                     style={{ padding: '0.375rem 0.5rem', height: 'auto' }}
@@ -644,7 +668,19 @@ export default function TaskManagement() {
                       }
                     }} 
                   />
-                  {currentTask.documentUrl && <div className="text-sm text-muted mt-1" style={{ wordBreak: 'break-all' }}>Current file: {currentTask.documentUrl}</div>}
+                  {currentTask.documentUrl && (
+                    <div className="text-sm text-muted mt-1 flex items-center justify-between" style={{ wordBreak: 'break-all' }}>
+                      <span>Current file: {currentTask.documentUrl}</span>
+                      <button 
+                        type="button" 
+                        onClick={() => setCurrentTask({...currentTask, documentUrl: undefined, documentSize: undefined, documentFile: undefined})}
+                        style={{ color: 'var(--destructive)', background: 'rgba(239, 68, 68, 0.1)', border: 'none', cursor: 'pointer', padding: '4px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        title="Remove Document"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="form-group flex-1">
                   <label className="form-label">Remarks</label>

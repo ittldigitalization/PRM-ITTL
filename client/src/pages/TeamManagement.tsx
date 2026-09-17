@@ -37,7 +37,7 @@ export default function TeamManagement() {
 
   const fetchMembers = async () => {
     try {
-      setLoading(true);
+
       const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
       if (error) throw error;
 
