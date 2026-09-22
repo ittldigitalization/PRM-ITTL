@@ -3,6 +3,7 @@ import { Search, Plus, Eye, Edit, Trash2, X, File } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from 'react-router-dom';
 import { useTeamMembers } from '../hooks/useTeamMembers';
+import { usePermissions } from '../lib/AuthorizationService';
 
 type Tab = 'individual' | 'team';
 type TaskStatus = 'Started' | 'In Progress' | 'Blocked' | 'Completed';
@@ -35,6 +36,7 @@ interface Task {
 }
 
 export default function TaskManagement() {
+  const { hasPermission } = usePermissions();
   const { currentUserName } = useTeamMembers();
   const [projects, setProjects] = useState<any[]>([]);
   const [milestones, setMilestones] = useState<any[]>([]);
@@ -388,20 +390,22 @@ export default function TaskManagement() {
             ))}
           </select>
 
-          <button 
-            className="btn btn-primary"
-            onClick={() => { 
-              setCurrentTask({ 
-                type: activeTab === 'individual' ? 'Individual' : 'Team', 
-                status: 'Started',
-                assignedTo: activeTab === 'individual' ? currentUserName : ''
-              }); 
-              setIsModalOpen(true); 
-            }}
-          >
-            <Plus size={18} style={{ marginRight: '0.5rem' }} />
-            Add Task
-          </button>
+          {hasPermission('tasks', 'CREATE') && (
+            <button 
+              className="btn btn-primary"
+              onClick={() => { 
+                setCurrentTask({ 
+                  type: activeTab === 'individual' ? 'Individual' : 'Team', 
+                  status: 'Started',
+                  assignedTo: activeTab === 'individual' ? currentUserName : ''
+                }); 
+                setIsModalOpen(true); 
+              }}
+            >
+              <Plus size={18} style={{ marginRight: '0.5rem' }} />
+              Add Task
+            </button>
+          )}
         </div>
       </div>
 
@@ -486,22 +490,26 @@ export default function TaskManagement() {
                     >
                       <Eye size={16} />
                     </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem' }} 
-                      title="Edit"
-                      onClick={() => { setCurrentTask(task); setIsModalOpen(true); }}
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
-                      title="Delete"
-                      onClick={() => handleDelete(task)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {hasPermission('tasks', 'UPDATE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem' }} 
+                        title="Edit"
+                        onClick={() => { setCurrentTask(task); setIsModalOpen(true); }}
+                      >
+                        <Edit size={16} />
+                      </button>
+                    )}
+                    {hasPermission('tasks', 'DELETE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
+                        title="Delete"
+                        onClick={() => handleDelete(task)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

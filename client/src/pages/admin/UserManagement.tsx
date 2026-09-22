@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus, Edit, Eye, Trash2, X } from 'lucide-react';
+import { usePermissions, notifyRbacChange } from '../../lib/AuthorizationService';
 
 const API_BASE_URL = typeof window !== 'undefined' 
   ? `${window.location.protocol}//${window.location.hostname}:5000/api` 
@@ -18,6 +19,7 @@ interface User {
 }
 
 const UserManagement: React.FC = () => {
+  const { hasPermission } = usePermissions();
   const [users, setUsers] = useState<User[]>([]);
   const [availableRoles, setAvailableRoles] = useState<Array<{id: string, name: string}>>([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +112,7 @@ const UserManagement: React.FC = () => {
       });
 
       if (res.ok) {
+        notifyRbacChange();
         fetchData();
       } else {
         const error = await res.json();
@@ -138,6 +141,7 @@ const UserManagement: React.FC = () => {
       });
 
       if (res.ok) {
+        notifyRbacChange();
         fetchData();
         handleCloseModal();
       } else {
@@ -156,23 +160,25 @@ const UserManagement: React.FC = () => {
     <div style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1 style={{ color: 'var(--foreground)' }}>User Management</h1>
-        <button
-          onClick={() => handleOpenModal()}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.5rem 1rem',
-            backgroundColor: 'var(--accent)',
-            color: 'var(--accent-foreground)',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: 'bold'
-          }}
-        >
-          <Plus size={16} /> Add User
-        </button>
+        {hasPermission('access_hub', 'CREATE') && (
+          <button
+            onClick={() => handleOpenModal()}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 1rem',
+              backgroundColor: 'var(--accent)',
+              color: 'var(--accent-foreground)',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            <Plus size={16} /> Add User
+          </button>
+        )}
       </div>
 
       <div style={{ overflowX: 'auto', backgroundColor: 'var(--card-bg, var(--card))', borderRadius: '8px', border: '1px solid var(--border)' }}>
@@ -214,20 +220,24 @@ const UserManagement: React.FC = () => {
                     >
                       <Eye size={18} />
                     </button>
-                    <button
-                      onClick={() => handleOpenModal(user)}
-                      title="Edit User"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', padding: '4px', display: 'flex', alignItems: 'center' }}
-                    >
-                      <Edit size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteUser(user)}
-                      title="Delete User"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px', display: 'flex', alignItems: 'center' }}
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    {hasPermission('access_hub', 'UPDATE') && (
+                      <button
+                        onClick={() => handleOpenModal(user)}
+                        title="Edit User"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', padding: '4px', display: 'flex', alignItems: 'center' }}
+                      >
+                        <Edit size={18} />
+                      </button>
+                    )}
+                    {hasPermission('access_hub', 'DELETE') && (
+                      <button
+                        onClick={() => handleDeleteUser(user)}
+                        title="Delete User"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px', display: 'flex', alignItems: 'center' }}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

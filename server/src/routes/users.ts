@@ -42,7 +42,7 @@ router.post('/', async (req: AuthRequest, res) => {
     const { email, password, department, Department, rbac_role_id, status } = req.body;
     const dept = department || Department || '';
     const username = email ? email.split('@')[0] : `user_${Date.now()}`;
-    const legacyRole = rbac_role_id === 'Manager' ? 'Project Manager' : 'Team Member';
+    const legacyRole = rbac_role_id === 'Admin' ? 'Admin' : rbac_role_id === 'Manager' ? 'Project Manager' : rbac_role_id || 'Team Member';
 
     // Create user in auth
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -124,7 +124,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
     const { id } = req.params;
     const { email, password, department, Department, rbac_role_id, status } = req.body;
     const dept = department !== undefined ? department : Department;
-    const legacyRole = rbac_role_id === 'Manager' ? 'Project Manager' : 'Team Member';
+    const legacyRole = rbac_role_id === 'Admin' ? 'Admin' : rbac_role_id === 'Manager' ? 'Project Manager' : rbac_role_id || 'Team Member';
 
     // Get old user data
     const { data: oldData } = await supabaseAdmin

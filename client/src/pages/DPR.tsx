@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useTeamMembers } from '../hooks/useTeamMembers';
+import { usePermissions } from '../lib/AuthorizationService';
 
 type DPRStatus = 'Started' | 'In Progress' | 'Completed' | 'Blocked';
 
@@ -18,6 +19,7 @@ interface DPRRecord {
 }
 
 export default function DPR() {
+  const { hasPermission } = usePermissions();
   const { currentUserName } = useTeamMembers();
   const [projects, setProjects] = useState<any[]>([]);
   const [records, setRecords] = useState<DPRRecord[]>([]);
@@ -171,13 +173,15 @@ export default function DPR() {
               All Reports
             </button>
           </div>
-          <button 
-            className="btn btn-primary"
-            onClick={() => { setCurrentRecord({ status: 'In Progress', progress: 0, employeeName: currentUserName, reportDate: new Date().toISOString().split('T')[0] }); setIsModalOpen(true); }}
-          >
-            <Plus size={18} style={{ marginRight: '0.5rem' }} />
-            Log Progress
-          </button>
+          {hasPermission('dpr', 'CREATE') && (
+            <button 
+              className="btn btn-primary"
+              onClick={() => { setCurrentRecord({ status: 'In Progress', progress: 0, employeeName: currentUserName, reportDate: new Date().toISOString().split('T')[0] }); setIsModalOpen(true); }}
+            >
+              <Plus size={18} style={{ marginRight: '0.5rem' }} />
+              Log Progress
+            </button>
+          )}
         </div>
       </div>
 
@@ -234,22 +238,26 @@ export default function DPR() {
                     >
                       <Eye size={16} />
                     </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem' }} 
-                      title="Edit"
-                      onClick={() => { setCurrentRecord(record); setIsModalOpen(true); }}
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
-                      title="Delete"
-                      onClick={() => handleDelete(record.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {hasPermission('dpr', 'UPDATE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem' }} 
+                        title="Edit"
+                        onClick={() => { setCurrentRecord(record); setIsModalOpen(true); }}
+                      >
+                        <Edit size={16} />
+                      </button>
+                    )}
+                    {hasPermission('dpr', 'DELETE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
+                        title="Delete"
+                        onClick={() => handleDelete(record.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -269,7 +277,7 @@ export default function DPR() {
           </tbody>
         </table>
       </div>
-      {isModalOpen && (
+      {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '600px' }}>
             <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>

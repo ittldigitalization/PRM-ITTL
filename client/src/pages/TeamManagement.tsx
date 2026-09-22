@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useTeamMembers } from '../hooks/useTeamMembers';
+import { usePermissions } from '../lib/AuthorizationService';
 
 type UserStatus = 'Active' | 'Inactive' | 'On Leave';
 
@@ -14,6 +15,7 @@ interface TeamMember {
 }
 
 export default function TeamManagement() {
+  const { hasPermission } = usePermissions();
   const { currentUserName } = useTeamMembers();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,13 +151,15 @@ export default function TeamManagement() {
               All Members
             </button>
           </div>
-          <button 
-            className="btn btn-primary"
-            onClick={() => { setCurrentMember({ name: currentUserName || '', status: 'Active' }); setIsModalOpen(true); }}
-          >
-            <Plus size={18} style={{ marginRight: '0.5rem' }} />
-            Add Member
-          </button>
+          {hasPermission('team', 'CREATE') && (
+            <button 
+              className="btn btn-primary"
+              onClick={() => { setCurrentMember({ name: currentUserName || '', status: 'Active' }); setIsModalOpen(true); }}
+            >
+              <Plus size={18} style={{ marginRight: '0.5rem' }} />
+              Add Member
+            </button>
+          )}
         </div>
       </div>
 
@@ -183,22 +187,26 @@ export default function TeamManagement() {
                     >
                       <Eye size={16} />
                     </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem' }} 
-                      title="Edit"
-                      onClick={() => { setCurrentMember(member); setIsModalOpen(true); }}
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
-                      title="Delete"
-                      onClick={() => handleDelete(member.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {hasPermission('team', 'UPDATE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem' }} 
+                        title="Edit"
+                        onClick={() => { setCurrentMember(member); setIsModalOpen(true); }}
+                      >
+                        <Edit size={16} />
+                      </button>
+                    )}
+                    {hasPermission('team', 'DELETE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
+                        title="Delete"
+                        onClick={() => handleDelete(member.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

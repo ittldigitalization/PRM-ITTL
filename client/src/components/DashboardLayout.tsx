@@ -50,7 +50,7 @@ const navGroups = [
     title: 'OPERATIONS',
     items: [
       { name: 'Issue Tracker', path: '/issues', icon: AlertCircle, destinationId: 'issues' },
-      { name: 'Team', path: '/team', icon: Users, destinationId: 'access_hub' },
+      { name: 'Team', path: '/team', icon: Users, destinationId: 'team' },
       { name: 'DPR', path: '/dpr', icon: FileSpreadsheet, destinationId: 'dpr' },
       { name: 'Documents', path: '/documents', icon: FolderOpen, destinationId: 'documents' },
     ]

@@ -30,6 +30,7 @@ export const DEFAULT_DESTINATIONS: Destination[] = [
   { id: 'gantt', name: 'Gantt Chart', description: 'Timeline and schedule visualization', category: 'Planning' },
   { id: 'dpr', name: 'Daily Progress Report (DPR)', description: 'Daily labor, materials, and machinery logs', category: 'Operations' },
   { id: 'issues', name: 'Daily Issues', description: 'Site blockers and incident management', category: 'Operations' },
+  { id: 'team', name: 'Team Management', description: 'Team members and directory', category: 'Operations' },
   { id: 'billing', name: 'Billing & Invoices', description: 'Client billing and payment tracking', category: 'Financials' },
   { id: 'documents', name: 'Documents', description: 'Drawings, contracts, and attachments', category: 'Management' },
   { id: 'amc', name: 'AMC Management', description: 'Annual maintenance contracts and visits', category: 'Services' },

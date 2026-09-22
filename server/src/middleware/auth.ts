@@ -57,10 +57,13 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
       }
     }
 
+    const resolvedRole = publicUser?.rbac_role_id || (publicUser?.role === 'Admin' ? 'Admin' : publicUser?.role === 'Project Manager' ? 'Manager' : publicUser?.role || 'User');
+
     req.user = {
       ...user,
-      rbac_role_id: publicUser?.rbac_role_id || 'Admin',
-      ...(publicUser || {})
+      ...(publicUser || {}),
+      rbac_role_id: resolvedRole,
+      role: publicUser?.role || resolvedRole
     };
 
     next();

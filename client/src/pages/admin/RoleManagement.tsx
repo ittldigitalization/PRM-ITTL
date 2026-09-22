@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { notifyRbacChange } from '../../lib/AuthorizationService';
 import { 
   Save, 
   ArrowLeft, 
@@ -251,8 +252,12 @@ const RoleManagement: React.FC = () => {
     const permissionsToSave: Array<{ destination: string; action: string }> = [];
     Object.entries(permissionsMap).forEach(([key, isGranted]) => {
       if (isGranted) {
-        const [destination_id, action] = key.split('_');
-        permissionsToSave.push({ destination: destination_id, action });
+        const lastUnderscoreIndex = key.lastIndexOf('_');
+        if (lastUnderscoreIndex !== -1) {
+          const destination_id = key.substring(0, lastUnderscoreIndex);
+          const action = key.substring(lastUnderscoreIndex + 1);
+          permissionsToSave.push({ destination: destination_id, action });
+        }
       }
     });
 
@@ -269,6 +274,7 @@ const RoleManagement: React.FC = () => {
 
       if (res.ok) {
         setSaveSuccess(true);
+        notifyRbacChange();
         setTimeout(() => setSaveSuccess(false), 3000);
       } else {
         const error = await res.json();
@@ -302,6 +308,7 @@ const RoleManagement: React.FC = () => {
 
       if (res.ok) {
         const saved = await res.json();
+        notifyRbacChange();
         if (editingRoleId) {
           setRoles(prev => prev.map(r => r.id === saved.id ? saved : r));
         } else {
@@ -343,6 +350,7 @@ const RoleManagement: React.FC = () => {
       });
 
       if (res.ok) {
+        notifyRbacChange();
         setRoles(prev => prev.filter(r => r.id !== role.id));
         if (selectedRoleId === role.id) {
           const remaining = roles.filter(r => r.id !== role.id);

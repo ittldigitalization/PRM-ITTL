@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { usePermissions } from '../lib/AuthorizationService';
 
 type ProjectStatus = 'Started' | 'In Progress' | 'Completed';
 
@@ -27,6 +28,7 @@ interface Project {
 }
 
 export default function ProjectManagement() {
+  const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -271,13 +273,15 @@ export default function ProjectManagement() {
             <option value="Internal project">Internal Projects</option>
             <option value="External project">External Projects</option>
           </select>
-          <button 
-            className="btn btn-primary"
-            onClick={() => { setCurrentProject({ status: 'Started' }); setIsModalOpen(true); }}
-          >
-            <Plus size={18} style={{ marginRight: '0.5rem' }} />
-            Add Project
-          </button>
+          {hasPermission('projects', 'CREATE') && (
+            <button 
+              className="btn btn-primary"
+              onClick={() => { setCurrentProject({ status: 'Started' }); setIsModalOpen(true); }}
+            >
+              <Plus size={18} style={{ marginRight: '0.5rem' }} />
+              Add Project
+            </button>
+          )}
         </div>
       </div>
 
@@ -348,22 +352,26 @@ export default function ProjectManagement() {
                     >
                       <Eye size={16} />
                     </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem' }} 
-                      title="Edit"
-                      onClick={() => { setCurrentProject(project); setIsModalOpen(true); }}
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
-                      title="Delete"
-                      onClick={() => handleDelete(project.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {hasPermission('projects', 'UPDATE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem' }} 
+                        title="Edit"
+                        onClick={() => { setCurrentProject(project); setIsModalOpen(true); }}
+                      >
+                        <Edit size={16} />
+                      </button>
+                    )}
+                    {hasPermission('projects', 'DELETE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
+                        title="Delete"
+                        onClick={() => handleDelete(project.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

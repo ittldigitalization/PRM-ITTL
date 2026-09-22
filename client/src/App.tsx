@@ -35,22 +35,54 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
-            <Route path="projects" element={<ProjectManagement />} />
-            <Route path="gantt" element={<GanttChart />} />
-            <Route path="milestones" element={<MilestoneManagement />} />
-            <Route path="tasks" element={<TaskManagement />} />
-            <Route path="team" element={<TeamManagement />} />
-            <Route path="dpr" element={<DPR />} />
-            <Route path="budget" element={<BudgetManagement />} />
-            <Route path="billing" element={<BillingManagement />} />
-            <Route path="documents" element={<DocumentManagement />} />
-            <Route path="customers" element={<CustomerManagement />} />
-            <Route path="issues" element={<IssueTracker />} />
-            <Route path="amc" element={<AmcDashboard />} />
-            <Route path="amc/contracts" element={<AmcContracts />} />
-            <Route path="amc/payments" element={<AmcPayments />} />
-            <Route path="amc/documents" element={<AmcDocuments />} />
-            <Route path="amc/history" element={<AmcHistory />} />
+            <Route path="projects" element={<ProtectedRoute destinationId="projects" action="VIEW" />}>
+              <Route index element={<ProjectManagement />} />
+            </Route>
+            <Route path="gantt" element={<ProtectedRoute destinationId="gantt" action="VIEW" />}>
+              <Route index element={<GanttChart />} />
+            </Route>
+            <Route path="milestones" element={<ProtectedRoute destinationId="milestones" action="VIEW" />}>
+              <Route index element={<MilestoneManagement />} />
+            </Route>
+            <Route path="tasks" element={<ProtectedRoute destinationId="tasks" action="VIEW" />}>
+              <Route index element={<TaskManagement />} />
+            </Route>
+            <Route path="team" element={<ProtectedRoute destinationId="team" action="VIEW" />}>
+              <Route index element={<TeamManagement />} />
+            </Route>
+            <Route path="dpr" element={<ProtectedRoute destinationId="dpr" action="VIEW" />}>
+              <Route index element={<DPR />} />
+            </Route>
+            <Route path="budget" element={<ProtectedRoute destinationId="projects" action="VIEW" />}>
+              <Route index element={<BudgetManagement />} />
+            </Route>
+            <Route path="billing" element={<ProtectedRoute destinationId="billing" action="VIEW" />}>
+              <Route index element={<BillingManagement />} />
+            </Route>
+            <Route path="documents" element={<ProtectedRoute destinationId="documents" action="VIEW" />}>
+              <Route index element={<DocumentManagement />} />
+            </Route>
+            <Route path="customers" element={<ProtectedRoute destinationId="amc" action="VIEW" />}>
+              <Route index element={<CustomerManagement />} />
+            </Route>
+            <Route path="issues" element={<ProtectedRoute destinationId="issues" action="VIEW" />}>
+              <Route index element={<IssueTracker />} />
+            </Route>
+            <Route path="amc" element={<ProtectedRoute destinationId="amc" action="VIEW" />}>
+              <Route index element={<AmcDashboard />} />
+            </Route>
+            <Route path="amc/contracts" element={<ProtectedRoute destinationId="amc" action="VIEW" />}>
+              <Route index element={<AmcContracts />} />
+            </Route>
+            <Route path="amc/payments" element={<ProtectedRoute destinationId="amc" action="VIEW" />}>
+              <Route index element={<AmcPayments />} />
+            </Route>
+            <Route path="amc/documents" element={<ProtectedRoute destinationId="amc" action="VIEW" />}>
+              <Route index element={<AmcDocuments />} />
+            </Route>
+            <Route path="amc/history" element={<ProtectedRoute destinationId="amc" action="VIEW" />}>
+              <Route index element={<AmcHistory />} />
+            </Route>
             
             {/* Admin Routes */}
             <Route path="admin" element={<ProtectedRoute destinationId="access_hub" action="VIEW" />}>

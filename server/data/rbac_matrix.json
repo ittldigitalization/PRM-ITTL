@@ -81,6 +81,12 @@
       "category": "Operations"
     },
     {
+      "id": "team",
+      "name": "Team Management",
+      "description": "Team members and directory",
+      "category": "Operations"
+    },
+    {
       "id": "billing",
       "name": "Billing & Invoices",
       "description": "Client billing and payment tracking",
@@ -107,6 +113,611 @@
   ],
   "permissions": [
     {
+      "role_id": "Supervisor",
+      "destination": "projects",
+      "action": "READ"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "projects",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "milestones",
+      "action": "READ"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "milestones",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "tasks",
+      "action": "READ"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "tasks",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "gantt",
+      "action": "READ"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "gantt",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "dpr",
+      "action": "READ"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "dpr",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "issues",
+      "action": "READ"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "issues",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "documents",
+      "action": "READ"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "documents",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "amc",
+      "action": "READ"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "amc",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "projects",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "milestones",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "tasks",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "gantt",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "dpr",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "issues",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "billing",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "documents",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Supervisor",
+      "destination": "amc",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "projects",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "projects",
+      "action": "READ"
+    },
+    {
+      "role_id": "User",
+      "destination": "milestones",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "milestones",
+      "action": "READ"
+    },
+    {
+      "role_id": "User",
+      "destination": "tasks",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "tasks",
+      "action": "READ"
+    },
+    {
+      "role_id": "User",
+      "destination": "gantt",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "gantt",
+      "action": "READ"
+    },
+    {
+      "role_id": "User",
+      "destination": "dpr",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "dpr",
+      "action": "READ"
+    },
+    {
+      "role_id": "User",
+      "destination": "issues",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "issues",
+      "action": "READ"
+    },
+    {
+      "role_id": "User",
+      "destination": "projects",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "projects",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "User",
+      "destination": "milestones",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "milestones",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "User",
+      "destination": "tasks",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "tasks",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "User",
+      "destination": "gantt",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "gantt",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "User",
+      "destination": "dpr",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "dpr",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "User",
+      "destination": "issues",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "User",
+      "destination": "issues",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "projects",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "projects",
+      "action": "READ"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "projects",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "projects",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "milestones",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "milestones",
+      "action": "READ"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "milestones",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "milestones",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "tasks",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "tasks",
+      "action": "READ"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "tasks",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "tasks",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "gantt",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "gantt",
+      "action": "READ"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "gantt",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "gantt",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "dpr",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "dpr",
+      "action": "READ"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "dpr",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "dpr",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "issues",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "issues",
+      "action": "READ"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "issues",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "issues",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "billing",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "billing",
+      "action": "READ"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "billing",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "billing",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "documents",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "documents",
+      "action": "READ"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "documents",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "documents",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "amc",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "amc",
+      "action": "READ"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "amc",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Admin",
+      "destination": "amc",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "projects",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "projects",
+      "action": "READ"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "projects",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "milestones",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "milestones",
+      "action": "READ"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "milestones",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "tasks",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "tasks",
+      "action": "READ"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "tasks",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "gantt",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "gantt",
+      "action": "READ"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "gantt",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "dpr",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "dpr",
+      "action": "READ"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "dpr",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "issues",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "issues",
+      "action": "READ"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "issues",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "billing",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "billing",
+      "action": "READ"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "billing",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "documents",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "documents",
+      "action": "READ"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "documents",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "amc",
+      "action": "CREATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "amc",
+      "action": "READ"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "amc",
+      "action": "UPDATE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "projects",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "milestones",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "tasks",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "gantt",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "dpr",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "issues",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "billing",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "documents",
+      "action": "DELETE"
+    },
+    {
+      "role_id": "Manager",
+      "destination": "amc",
+      "action": "DELETE"
+    },
+    {
       "role_id": "Viewer",
       "destination": "projects",
       "action": "READ"
@@ -152,276 +763,6 @@
       "action": "READ"
     },
     {
-      "role_id": "User",
-      "destination": "projects",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "projects",
-      "action": "READ"
-    },
-    {
-      "role_id": "User",
-      "destination": "milestones",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "milestones",
-      "action": "READ"
-    },
-    {
-      "role_id": "User",
-      "destination": "tasks",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "tasks",
-      "action": "READ"
-    },
-    {
-      "role_id": "User",
-      "destination": "gantt",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "gantt",
-      "action": "READ"
-    },
-    {
-      "role_id": "User",
-      "destination": "dpr",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "dpr",
-      "action": "READ"
-    },
-    {
-      "role_id": "User",
-      "destination": "issues",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "issues",
-      "action": "READ"
-    },
-    {
-      "role_id": "User",
-      "destination": "documents",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "documents",
-      "action": "READ"
-    },
-    {
-      "role_id": "User",
-      "destination": "projects",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "projects",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "User",
-      "destination": "milestones",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "milestones",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "User",
-      "destination": "tasks",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "tasks",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "User",
-      "destination": "gantt",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "gantt",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "User",
-      "destination": "dpr",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "dpr",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "User",
-      "destination": "issues",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "issues",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "User",
-      "destination": "documents",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "User",
-      "destination": "documents",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "projects",
-      "action": "READ"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "projects",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "milestones",
-      "action": "READ"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "milestones",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "tasks",
-      "action": "READ"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "tasks",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "gantt",
-      "action": "READ"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "gantt",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "dpr",
-      "action": "READ"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "dpr",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "issues",
-      "action": "READ"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "issues",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "documents",
-      "action": "READ"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "documents",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "amc",
-      "action": "READ"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "amc",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "projects",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "milestones",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "tasks",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "gantt",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "dpr",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "issues",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "billing",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "documents",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "amc",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Supervisor",
-      "destination": "access",
-      "action": "hub"
-    },
-    {
       "role_id": "Employee",
       "destination": "projects",
       "action": "READ"
@@ -550,386 +891,6 @@
       "role_id": "Employee",
       "destination": "issues",
       "action": "DELETE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "projects",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "projects",
-      "action": "READ"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "projects",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "milestones",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "milestones",
-      "action": "READ"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "milestones",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "tasks",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "tasks",
-      "action": "READ"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "tasks",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "gantt",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "gantt",
-      "action": "READ"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "gantt",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "dpr",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "dpr",
-      "action": "READ"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "dpr",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "issues",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "issues",
-      "action": "READ"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "issues",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "billing",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "billing",
-      "action": "READ"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "billing",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "documents",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "documents",
-      "action": "READ"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "documents",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "amc",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "amc",
-      "action": "READ"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "amc",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "projects",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "milestones",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "tasks",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "gantt",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "dpr",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "issues",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "billing",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "documents",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "amc",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "access",
-      "action": "hub"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "access",
-      "action": "hub"
-    },
-    {
-      "role_id": "Manager",
-      "destination": "access",
-      "action": "hub"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "projects",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "projects",
-      "action": "READ"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "projects",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "projects",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "milestones",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "milestones",
-      "action": "READ"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "milestones",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "milestones",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "tasks",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "tasks",
-      "action": "READ"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "tasks",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "tasks",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "gantt",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "gantt",
-      "action": "READ"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "gantt",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "gantt",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "dpr",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "dpr",
-      "action": "READ"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "dpr",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "dpr",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "issues",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "issues",
-      "action": "READ"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "issues",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "issues",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "billing",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "billing",
-      "action": "READ"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "billing",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "billing",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "documents",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "documents",
-      "action": "READ"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "documents",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "documents",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "amc",
-      "action": "CREATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "amc",
-      "action": "READ"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "amc",
-      "action": "UPDATE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "amc",
-      "action": "DELETE"
-    },
-    {
-      "role_id": "Admin",
-      "destination": "access",
-      "action": "hub"
     }
   ]
 }
