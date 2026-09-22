@@ -5,52 +5,237 @@ import 'gantt-task-react/dist/index.css';
 
 type Tab = 'team' | 'individual';
 
+/* ── Smart Duration Formatter ──────────────────────────────────── */
+const formatDuration = (totalDays: number): string => {
+  if (totalDays <= 0) return '0d';
+
+  const years = Math.floor(totalDays / 365);
+  let remaining = totalDays % 365;
+  const months = Math.floor(remaining / 30);
+  remaining = remaining % 30;
+  const weeks = Math.floor(remaining / 7);
+  const days = remaining % 7;
+
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years}y`);
+  if (months > 0) parts.push(`${months}m`);
+  if (weeks > 0) parts.push(`${weeks}w`);
+  if (days > 0) parts.push(`${days}d`);
+
+  return parts.join(' ') || '0d';
+};
+
+/* ── Tree Connector Helper ─────────────────────────────────────── */
+const getTreeInfo = (task: Task, allTasks: Task[]) => {
+  const isProject = task.id.startsWith('p-');
+  const isMilestone = task.id.startsWith('m-');
+  const isTask = task.id.startsWith('t-');
+
+  if (isProject) {
+    return { depth: 0, connectors: [] as string[] };
+  }
+
+  // Find siblings (items sharing the same parent)
+  const parentId = (task as any).project;
+  const siblings = allTasks.filter(t => (t as any).project === parentId);
+  const isLast = siblings.indexOf(task) === siblings.length - 1;
+
+  if (isMilestone) {
+    return {
+      depth: 1,
+      connectors: [isLast ? '└── ' : '├── '],
+      isLast,
+      parentId,
+    };
+  }
+
+  if (isTask) {
+    // Task is depth 2 — need connector for its parent milestone AND for itself
+    const milestoneParentId = parentId; // e.g. "m-xxx"
+    const milestoneTask = allTasks.find(t => t.id === milestoneParentId);
+    const grandParentId = milestoneTask ? (milestoneTask as any).project : null;
+
+    // Is the parent milestone the last among its siblings?
+    const milestoneSiblings = allTasks.filter(t => (t as any).project === grandParentId);
+    const isMilestoneLast = milestoneTask ? milestoneSiblings.indexOf(milestoneTask) === milestoneSiblings.length - 1 : false;
+
+    // First connector: continuing line from grandparent (project → milestone level)
+    const firstConnector = isMilestoneLast ? '    ' : '│   ';
+    // Second connector: branch from milestone to task
+    const secondConnector = isLast ? '└── ' : '├── ';
+
+    return {
+      depth: 2,
+      connectors: [firstConnector, secondConnector],
+      isLast,
+      parentId,
+    };
+  }
+
+  return { depth: 0, connectors: [] as string[] };
+};
+
+/* ── Custom Task List Header ───────────────────────────────────── */
 const CustomTaskListHeader: React.FC<{ headerHeight: number; rowWidth: string; fontFamily: string; fontSize: string }> = ({ headerHeight, fontFamily, fontSize }) => {
   return (
-    <div style={{ display: 'flex', height: headerHeight, fontFamily, fontSize, borderBottom: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--muted-foreground)', fontWeight: 600, textTransform: 'uppercase' }}>
-      <div style={{ flex: 1, minWidth: '150px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px' }}>Name</div>
-      <div style={{ width: '80px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px' }}>From</div>
-      <div style={{ width: '80px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px' }}>To</div>
-      <div style={{ width: '80px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px' }}>Status</div>
-      <div style={{ width: '80px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px' }}>Duration</div>
+    <div style={{ display: 'flex', height: headerHeight, fontFamily, fontSize, borderBottom: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--muted-foreground)', fontWeight: 600, textTransform: 'uppercase', alignItems: 'center' }}>
+      <div style={{ flex: 1, minWidth: '200px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px', height: '100%' }}>Name</div>
+      <div style={{ width: '80px', padding: '0 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', height: '100%' }}>From</div>
+      <div style={{ width: '80px', padding: '0 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', height: '100%' }}>To</div>
+      <div style={{ width: '80px', padding: '0 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', height: '100%' }}>Status</div>
+      <div style={{ width: '100px', padding: '0 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', height: '100%' }}>Duration</div>
     </div>
   );
 };
 
+/* ── Custom Task List Table (Tree Layout) ──────────────────────── */
 const CustomTaskListTable: React.FC<{
   rowHeight: number; rowWidth: string; fontFamily: string; fontSize: string; locale: string; tasks: Task[]; selectedTaskId: string; setSelectedTask: (taskId: string) => void; onExpanderClick: (task: Task) => void;
 }> = ({ rowHeight, fontFamily, tasks, selectedTaskId, setSelectedTask, onExpanderClick }) => {
+
+  const connectorColor = '#cbd5e1'; // subtle slate-300
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       {tasks.map(t => {
         const durationMs = t.end.getTime() - t.start.getTime();
         const durationDays = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60 * 24)));
+        const durationStr = formatDuration(durationDays);
+        const treeInfo = getTreeInfo(t, tasks);
+
+        const isProject = t.id.startsWith('p-');
+        const isMilestone = t.id.startsWith('m-');
+        const isTaskItem = t.id.startsWith('t-');
+
+        // Build expander
         let expander = null;
-        if (t.id.startsWith('p-') || t.id.startsWith('m-')) {
+        if (isProject || isMilestone) {
           expander = (
-            <span style={{ display: 'inline-block', width: '16px', fontSize: '10px', textAlign: 'center', cursor: 'pointer', marginRight: '4px' }} onClick={() => onExpanderClick(t)}>
+            <span
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: '18px', height: '18px', fontSize: '9px', cursor: 'pointer',
+                marginRight: '6px', borderRadius: '3px', flexShrink: 0,
+                background: isProject ? 'var(--primary)' : 'var(--muted)',
+                color: isProject ? '#fff' : 'var(--foreground)',
+                transition: 'background 0.15s',
+              }}
+              onClick={(e) => { e.stopPropagation(); onExpanderClick(t); }}
+            >
               {t.hideChildren ? '▶' : '▼'}
             </span>
           );
-        } else {
-           expander = <span style={{ display: 'inline-block', width: '20px' }}></span>;
         }
-        const paddingLeft = t.id.startsWith('p-') ? '10px' : t.id.startsWith('m-') ? '30px' : '50px';
+
+        // Row background for different levels
+        const rowBg = t.id === selectedTaskId
+          ? 'var(--muted)'
+          : isProject
+            ? 'rgba(var(--primary-rgb, 99, 102, 241), 0.03)'
+            : 'transparent';
+
+        // Font weight
+        const nameWeight = isProject ? 700 : isMilestone ? 600 : 400;
+        const nameSize = isProject ? '14px' : isMilestone ? '13px' : '12.5px';
 
         return (
-          <div 
-            key={t.id} 
-            style={{ display: 'flex', height: rowHeight, fontFamily, borderBottom: '1px solid var(--border)', background: t.id === selectedTaskId ? 'var(--muted)' : 'transparent', color: 'var(--foreground)' }}
+          <div
+            key={t.id}
+            style={{
+              display: 'flex', height: rowHeight, fontFamily,
+              borderBottom: '1px solid var(--border)',
+              background: rowBg,
+              color: 'var(--foreground)',
+              alignItems: 'center',
+              cursor: 'pointer',
+              transition: 'background 0.1s',
+            }}
             onClick={() => setSelectedTask(t.id)}
           >
-             <div style={{ flex: 1, minWidth: '150px', padding: '0 10px', paddingLeft, display: 'flex', alignItems: 'center', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-               {expander}
-               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '14px' }} title={t.name}>{t.name}</span>
-             </div>
-             <div style={{ width: '80px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px' }}>{t.start.toLocaleDateString('en-GB')}</div>
-             <div style={{ width: '80px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px' }}>{t.end.toLocaleDateString('en-GB')}</div>
-             <div style={{ width: '80px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px' }}>{(t as any).statusStr || '-'}</div>
-             <div style={{ width: '80px', padding: '0 10px', display: 'flex', alignItems: 'center', fontSize: '12px', fontWeight: 'bold' }}>{durationDays} d</div>
+            {/* NAME column with tree connectors */}
+            <div style={{
+              flex: 1, minWidth: '200px', padding: '0 10px',
+              display: 'flex', alignItems: 'center',
+              overflow: 'hidden', whiteSpace: 'nowrap', height: '100%',
+            }}>
+              {/* Tree connector lines */}
+              {treeInfo.connectors.map((connector, idx) => (
+                <span
+                  key={idx}
+                  style={{
+                    display: 'inline-block',
+                    width: '24px',
+                    fontFamily: 'monospace',
+                    fontSize: '13px',
+                    color: connectorColor,
+                    flexShrink: 0,
+                    userSelect: 'none',
+                    lineHeight: `${rowHeight}px`,
+                  }}
+                >
+                  {connector}
+                </span>
+              ))}
+
+              {/* Expander or spacer for tasks */}
+              {expander}
+              {isTaskItem && <span style={{ display: 'inline-block', width: '6px', flexShrink: 0 }} />}
+
+              {/* Name text */}
+              <span
+                style={{
+                  overflow: 'hidden', textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap', fontSize: nameSize,
+                  fontWeight: nameWeight,
+                }}
+                title={t.name}
+              >
+                {t.name}
+              </span>
+            </div>
+
+            {/* FROM column */}
+            <div style={{
+              width: '80px', padding: '0 6px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '11.5px', height: '100%', flexShrink: 0,
+            }}>
+              {t.start.toLocaleDateString('en-GB')}
+            </div>
+
+            {/* TO column */}
+            <div style={{
+              width: '80px', padding: '0 6px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '11.5px', height: '100%', flexShrink: 0,
+            }}>
+              {t.end.toLocaleDateString('en-GB')}
+            </div>
+
+            {/* STATUS column */}
+            <div style={{
+              width: '80px', padding: '0 6px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '11px', height: '100%', flexShrink: 0,
+            }}>
+              <span style={{
+                padding: '2px 6px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 600,
+                whiteSpace: 'nowrap',
+                backgroundColor: t.styles?.backgroundColor ? `${t.styles.backgroundColor}20` : 'var(--muted)',
+                color: t.styles?.backgroundColor || 'var(--muted-foreground)',
+              }}>
+                {(t as any).statusStr || '-'}
+              </span>
+            </div>
+
+            {/* DURATION column */}
+            <div style={{
+              width: '100px', padding: '0 6px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '11.5px', fontWeight: 700, height: '100%', flexShrink: 0,
+            }}>
+              {durationStr}
+            </div>
           </div>
         );
       })}
@@ -58,16 +243,18 @@ const CustomTaskListTable: React.FC<{
   );
 };
 
+/* ── Custom Tooltip ────────────────────────────────────────────── */
 const CustomTooltip: React.FC<{ task: Task; fontSize: string; fontFamily: string }> = ({ task, fontSize, fontFamily }) => {
   const durationMs = task.end.getTime() - task.start.getTime();
   const durationDays = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60 * 24)));
+  const durationStr = formatDuration(durationDays);
   return (
     <div style={{ padding: '12px', background: 'var(--card)', border: `2px solid ${task.styles?.backgroundColor || 'var(--border)'}`, borderRadius: '8px', boxShadow: 'var(--shadow-md)', fontFamily, fontSize }}>
       <b style={{ fontSize: '14px', display: 'block', marginBottom: '4px', color: task.styles?.backgroundColor || 'var(--foreground)' }}>{task.name}</b>
       <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>Start: {task.start.toLocaleDateString('en-GB')}</div>
       <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>End: {task.end.toLocaleDateString('en-GB')}</div>
       <div style={{ fontSize: '12px', fontWeight: 'bold', marginTop: '4px', color: task.styles?.backgroundColor || 'var(--foreground)' }}>
-        Duration: {durationDays} Days
+        Duration: {durationStr}
       </div>
     </div>
   );
@@ -163,8 +350,9 @@ export default function GanttChart() {
         if (isInternalProject) individualTasks.push(projectTask);
 
         const pMilestones = milestones.filter(m => m.project_id === p.id);
+        const pTasksNoMilestone = pTasks.filter(t => !t.milestone_id);
+
         pMilestones.forEach(m => {
-          // const isMilestoneActual = !!(m.actual_start_date || m.actual_end_date);
           const { start: mStart, end: mEnd } = getSafeDates(
             m.actual_start_date, m.start_date, m.planned_start_date, 
             m.actual_end_date, m.end_date, m.planned_end_date
@@ -190,10 +378,39 @@ export default function GanttChart() {
 
           if (isExternalProject) formattedTasks.push(milestoneTask);
           if (isInternalProject) individualTasks.push(milestoneTask);
+
+          // Find tasks that belong to this milestone
+          const mTasks = pTasks.filter(t => t.milestone_id === m.id);
+          mTasks.forEach(t => {
+            const { start: tStart, end: tEnd } = getSafeDates(
+              t.actual_start_date, t.start_date, t.planned_start_date, 
+              t.actual_end_date, t.end_date, t.planned_end_date
+            );
+
+            const taskObj: Task = {
+               id: `t-${t.id}`,
+               name: `${t.title} - ${t.progress || 0}%`,
+               type: 'task',
+               start: tStart,
+               end: tEnd,
+               progress: t.progress || 0,
+               isDisabled: true,
+               styles: { 
+                 progressColor: getColor(t.status), 
+                 progressSelectedColor: getColor(t.status),
+                 backgroundColor: getColor(t.status)
+               },
+               project: `m-${m.id}`,
+               statusStr: t.status
+            } as any;
+            
+            if (isExternalProject) formattedTasks.push(taskObj);
+            if (isInternalProject) individualTasks.push(taskObj);
+          });
         });
 
-        pTasks.forEach(t => {
-          // const isTaskActual = !!(t.actual_start_date || t.actual_end_date);
+        // Add tasks that have NO milestone, directly under the project
+        pTasksNoMilestone.forEach(t => {
           const { start: tStart, end: tEnd } = getSafeDates(
             t.actual_start_date, t.start_date, t.planned_start_date, 
             t.actual_end_date, t.end_date, t.planned_end_date
@@ -212,7 +429,7 @@ export default function GanttChart() {
                progressSelectedColor: getColor(t.status),
                backgroundColor: getColor(t.status)
              },
-             project: t.milestone_id ? `m-${t.milestone_id}` : `p-${p.id}`,
+             project: `p-${p.id}`,
              statusStr: t.status
           } as any;
           
@@ -437,7 +654,7 @@ export default function GanttChart() {
               viewMode={viewMode}
               onExpanderClick={handleExpanderClick}
               onDateChange={handleDateChange}
-              listCellWidth="390px"
+              listCellWidth="440px"
               columnWidth={viewMode === ViewMode.Month ? 150 : viewMode === ViewMode.Week ? 100 : 60}
               TaskListHeader={CustomTaskListHeader}
               TaskListTable={CustomTaskListTable}

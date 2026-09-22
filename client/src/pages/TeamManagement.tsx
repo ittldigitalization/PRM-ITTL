@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useTeamMembers } from '../hooks/useTeamMembers';
 
 type UserStatus = 'Active' | 'Inactive' | 'On Leave';
 
@@ -13,9 +14,11 @@ interface TeamMember {
 }
 
 export default function TeamManagement() {
+  const { currentUserName } = useTeamMembers();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewScope, setViewScope] = useState<'my' | 'all'>('my');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [currentMember, setCurrentMember] = useState<Partial<TeamMember>>({ status: 'Active' });
@@ -57,10 +60,14 @@ export default function TeamManagement() {
     }
   };
 
-  const filteredMembers = members.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    m.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredMembers = members.filter(m => {
+    if (viewScope === 'my' && currentUserName) {
+      if (m.name.toLowerCase() !== currentUserName.toLowerCase()) {
+        return false;
+      }
+    }
+    return m.name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const getStatusBadge = (status: UserStatus) => {
     switch (status) {
@@ -76,8 +83,8 @@ export default function TeamManagement() {
     
     const dbUser = {
       username: currentMember.name,
-      email: currentMember.email,
-      role: currentMember.role || 'Team Member',
+      email: currentMember.email || null,
+      role: 'Team Member',
       status: currentMember.status || 'Active'
     };
 
@@ -125,13 +132,31 @@ export default function TeamManagement() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button 
-          className="btn btn-primary"
-          onClick={() => { setCurrentMember({ status: 'Active' }); setIsModalOpen(true); }}
-        >
-          <Plus size={18} style={{ marginRight: '0.5rem' }} />
-          Add Member
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex rounded-md shadow-sm border border-border overflow-hidden">
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold ${viewScope === 'my' ? 'bg-primary text-white' : 'bg-card text-muted-foreground hover:bg-muted'}`}
+              onClick={() => setViewScope('my')}
+            >
+              My Member {currentUserName ? `(${currentUserName})` : ''}
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold ${viewScope === 'all' ? 'bg-primary text-white' : 'bg-card text-muted-foreground hover:bg-muted'}`}
+              onClick={() => setViewScope('all')}
+            >
+              All Members
+            </button>
+          </div>
+          <button 
+            className="btn btn-primary"
+            onClick={() => { setCurrentMember({ name: currentUserName || '', status: 'Active' }); setIsModalOpen(true); }}
+          >
+            <Plus size={18} style={{ marginRight: '0.5rem' }} />
+            Add Member
+          </button>
+        </div>
       </div>
 
       <div className="table-container">
@@ -139,7 +164,6 @@ export default function TeamManagement() {
           <thead>
             <tr>
               <th>Member Name</th>
-              <th>Role</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -148,7 +172,6 @@ export default function TeamManagement() {
             {filteredMembers.map(member => (
               <tr key={member.id}>
                 <td className="font-medium">{member.name}</td>
-                <td>{member.role}</td>
                 <td>{getStatusBadge(member.status)}</td>
                 <td>
                   <div className="flex gap-2">
@@ -182,12 +205,12 @@ export default function TeamManagement() {
             ))}
             {loading && (
               <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading team members...</td>
+                <td colSpan={3} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading team members...</td>
               </tr>
             )}
             {!loading && filteredMembers.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">
+                <td colSpan={3} style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">
                   No team members found.
                 </td>
               </tr>
@@ -216,22 +239,6 @@ export default function TeamManagement() {
                   value={currentMember.name || ''} 
                   onChange={e => setCurrentMember({...currentMember, name: e.target.value})} 
                 />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Role</label>
-                <select 
-                  className="form-input"
-                  value={currentMember.role || 'Frontend Developer'}
-                  onChange={e => setCurrentMember({...currentMember, role: e.target.value})}
-                >
-                  <option>Frontend Developer</option>
-                  <option>Backend Developer</option>
-                  <option>UI/UX Designer</option>
-                  <option>Project Manager</option>
-                  <option>QA / Testing Engineer</option>
-                  <option>Team Member</option>
-                </select>
               </div>
 
               <div className="form-group">
@@ -278,22 +285,16 @@ export default function TeamManagement() {
             </div>
             
             <div style={{ padding: '2rem' }}>
-              <div className="grid grid-cols-2 gap-y-6 gap-x-8">
-                <div className="col-span-2">
+              <div className="flex flex-col gap-5">
+                <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Member Name</p>
                   <div className="text-base font-bold text-slate-900 bg-slate-50 px-3 py-3 rounded-lg border border-slate-200">
                     {currentMember.name}
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Role</p>
-                  <div className="text-sm font-semibold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100 inline-block">
-                    {currentMember.role}
-                  </div>
-                </div>
-                <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Status</p>
-                  <div className="flex items-center gap-3 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 h-[38px]">
+                  <div className="flex items-center gap-3 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 h-[38px] w-fit">
                     <div>{getStatusBadge(currentMember.status as UserStatus)}</div>
                   </div>
                 </div>

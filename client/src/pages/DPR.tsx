@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useTeamMembers } from '../hooks/useTeamMembers';
 
 type DPRStatus = 'Started' | 'In Progress' | 'Completed' | 'Blocked';
 
@@ -17,10 +18,15 @@ interface DPRRecord {
 }
 
 export default function DPR() {
+  const { currentUserName } = useTeamMembers();
   const [projects, setProjects] = useState<any[]>([]);
   const [records, setRecords] = useState<DPRRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewScope, setViewScope] = useState<'my' | 'all'>('my');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
   useEffect(() => {
     fetchProjects();
     fetchRecords();
@@ -44,7 +50,6 @@ export default function DPR() {
 
   const fetchRecords = async () => {
     try {
-
       const { data, error } = await supabase.from('dprs').select('*, projects(name)').order('created_at', { ascending: false });
       if (error) throw error;
 
@@ -68,16 +73,20 @@ export default function DPR() {
     }
   };
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<Partial<DPRRecord>>({ status: 'In Progress', progress: 0 });
 
-  const filteredRecords = records.filter(r => 
-    r.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    r.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (r.taskName && r.taskName.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredRecords = records.filter(r => {
+    if (viewScope === 'my' && currentUserName) {
+      if (r.employeeName.toLowerCase() !== currentUserName.toLowerCase()) {
+        return false;
+      }
+    }
+    return (
+      r.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      r.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (r.taskName && r.taskName.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  });
 
   const getStatusBadge = (status: DPRStatus) => {
     switch (status) {
@@ -145,13 +154,31 @@ export default function DPR() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button 
-          className="btn btn-primary"
-          onClick={() => { setCurrentRecord({ status: 'In Progress', progress: 0, reportDate: new Date().toISOString().split('T')[0] }); setIsModalOpen(true); }}
-        >
-          <Plus size={18} style={{ marginRight: '0.5rem' }} />
-          Log Progress
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex rounded-md shadow-sm border border-border overflow-hidden">
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold ${viewScope === 'my' ? 'bg-primary text-white' : 'bg-card text-muted-foreground hover:bg-muted'}`}
+              onClick={() => setViewScope('my')}
+            >
+              My Reports {currentUserName ? `(${currentUserName})` : ''}
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold ${viewScope === 'all' ? 'bg-primary text-white' : 'bg-card text-muted-foreground hover:bg-muted'}`}
+              onClick={() => setViewScope('all')}
+            >
+              All Reports
+            </button>
+          </div>
+          <button 
+            className="btn btn-primary"
+            onClick={() => { setCurrentRecord({ status: 'In Progress', progress: 0, employeeName: currentUserName, reportDate: new Date().toISOString().split('T')[0] }); setIsModalOpen(true); }}
+          >
+            <Plus size={18} style={{ marginRight: '0.5rem' }} />
+            Log Progress
+          </button>
+        </div>
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
@@ -242,8 +269,7 @@ export default function DPR() {
           </tbody>
         </table>
       </div>
-
-      {isModalOpen && (
+      {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '600px' }}>
             <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
@@ -260,9 +286,11 @@ export default function DPR() {
                   <input 
                     required 
                     type="text" 
+                    readOnly
                     className="form-input" 
-                    value={currentRecord.employeeName || ''} 
-                    onChange={e => setCurrentRecord({...currentRecord, employeeName: e.target.value})} 
+                    style={{ backgroundColor: 'var(--muted)', cursor: 'default' }}
+                    value={currentRecord.employeeName || currentUserName || ''} 
+                    title="Auto-fetched from logged-in account"
                   />
                 </div>
                 <div className="form-group flex-1">

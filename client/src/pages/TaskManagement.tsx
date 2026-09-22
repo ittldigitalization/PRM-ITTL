@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X, File } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from 'react-router-dom';
+import { useTeamMembers } from '../hooks/useTeamMembers';
 
 type Tab = 'individual' | 'team';
 type TaskStatus = 'Started' | 'In Progress' | 'Blocked' | 'Completed';
@@ -34,6 +35,7 @@ interface Task {
 }
 
 export default function TaskManagement() {
+  const { currentUserName } = useTeamMembers();
   const [projects, setProjects] = useState<any[]>([]);
   const [milestones, setMilestones] = useState<any[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -185,7 +187,7 @@ export default function TaskManagement() {
       progress: currentTask.progress || 0,
       status: currentTask.status || 'Not Started',
       type: currentTask.type,
-      assigned_to: currentTask.assignedTo,
+      assigned_to: currentTask.type === 'Individual' ? (currentTask.assignedTo || currentUserName) : currentTask.assignedTo,
       role: currentTask.role,
       document_url: currentTask.documentUrl,
       remarks: currentTask.remarks
@@ -389,7 +391,11 @@ export default function TaskManagement() {
           <button 
             className="btn btn-primary"
             onClick={() => { 
-              setCurrentTask({ type: activeTab === 'individual' ? 'Individual' : 'Team', status: 'Started' }); 
+              setCurrentTask({ 
+                type: activeTab === 'individual' ? 'Individual' : 'Team', 
+                status: 'Started',
+                assignedTo: activeTab === 'individual' ? currentUserName : ''
+              }); 
               setIsModalOpen(true); 
             }}
           >
@@ -577,9 +583,11 @@ export default function TaskManagement() {
                     <input 
                       required 
                       type="text" 
+                      readOnly
                       className="form-input" 
-                      value={currentTask.assignedTo || ''} 
-                      onChange={e => setCurrentTask({...currentTask, assignedTo: e.target.value})} 
+                      style={{ backgroundColor: 'var(--muted)', cursor: 'default' }}
+                      value={currentTask.assignedTo || currentUserName || ''} 
+                      title="Auto-fetched from logged-in user"
                     />
                   </div>
                 </>

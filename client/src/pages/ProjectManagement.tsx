@@ -300,6 +300,7 @@ export default function ProjectManagement() {
               <th>Planned Budget</th>
               <th>Type</th>
               <th>Start Date</th>
+              <th>End Date</th>
               <th>Progress</th>
               <th>Status</th>
               <th>Milestones</th>
@@ -318,7 +319,8 @@ export default function ProjectManagement() {
                   </span>
                 </td>
                 <td>{project.startDate}</td>
-                <td>
+                <td>{project.endDate}</td>
+                <td style={{ minWidth: '120px' }}>
                   <div className="flex items-center gap-2">
                     <div className="flex-1" style={{ height: '6px', backgroundColor: 'var(--border)', borderRadius: '3px', overflow: 'hidden', width: '60px' }}>
                       <div style={{ height: '100%', width: `${project.progress || 0}%`, backgroundColor: (project.progress || 0) === 100 ? 'var(--success)' : 'var(--primary)' }} />

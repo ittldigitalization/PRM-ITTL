@@ -43,7 +43,9 @@ import rolesRouter from './routes/roles';
 import destinationsRouter from './routes/destinations';
 import auditRouter from './routes/audit';
 import projectsRouter from './routes/projects';
+import { startCronJobs } from './services/cron';
 import { requireAuth } from './middleware/auth';
+import path from 'path';
 
 dotenv.config();
 
@@ -108,6 +110,21 @@ app.use('/api/destinations', destinationsRouter);
 app.use('/api/audit', requireAuth, auditRouter);
 app.use('/api/projects', projectsRouter);
 
+// Serve production static frontend if client/dist exists
+const clientDistPath = path.resolve(__dirname, '../../client/dist');
+app.use(express.static(clientDistPath));
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(clientDistPath, 'index.html'), (err) => {
+    if (err) next();
+  });
+});
+
+startCronJobs();
+
 app.listen(port as number, '0.0.0.0', () => {
-  // Silent startup to keep command prompt clean for the user
+  console.log(`[EPMS Production Server] Running on http://localhost:${port}`);
 });
