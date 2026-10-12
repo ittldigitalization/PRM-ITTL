@@ -1,11 +1,13 @@
 import express from 'express';
 import { supabaseAdmin } from '../index';
 
+import { requirePermission } from '../middleware/auth';
+
 const router = express.Router();
 
 // GET /api/projects/overall
 // Returns an overall project CRM view: Projects with their milestones, tasks, and billing data
-router.get('/overall', async (req, res) => {
+router.get('/overall', requirePermission('projects', 'READ'), async (req, res) => {
   try {
     const { data: projects, error: projectsError } = await supabaseAdmin
       .from('projects')
@@ -64,7 +66,7 @@ router.get('/overall', async (req, res) => {
     });
   } catch (error: any) {
     console.error('Error fetching overall projects:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Failed to fetch project data' });
   }
 });
 

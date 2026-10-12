@@ -126,3 +126,4 @@ server/check-columns.mjs
 
 # Garbage / temporary
 garbage/
+scratch/

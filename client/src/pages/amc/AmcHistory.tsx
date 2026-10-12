@@ -3,26 +3,12 @@ import { Search } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function AmcHistory() {
-  const [contracts, setContracts] = useState<any[]>([]);
+  interface AmcHistoryContract { id: string; amc_number: string; contract_name: string; start_date: string; end_date: string; status: string; customers?: { name: string }; [key: string]: any; }
+  const [contracts, setContracts] = useState<AmcHistoryContract[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  useEffect(() => {
-    fetchHistory();
-
-    const sub = supabase
-      .channel('amc_history_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'amc_contracts' }, () => {
-        fetchHistory();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(sub);
-    };
-  }, []);
-
-  const fetchHistory = async () => {
+  async function fetchHistory() {
     try {
 
       // Fetch all contracts sorted by customer name and start date
@@ -38,7 +24,23 @@ export default function AmcHistory() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchHistory();
+
+    const sub = supabase
+      .channel('amc_history_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'amc_contracts' }, () => {
+        fetchHistory();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(sub);
+    };
+  }, []);
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {

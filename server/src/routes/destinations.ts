@@ -5,10 +5,10 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    const data = rbacService.getDestinations();
+    const data = await rbacService.getDestinations();
     res.json(data);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch destinations' });
   }
 });
 

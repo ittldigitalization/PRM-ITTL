@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X, Image as ImageIcon, AlertCircle, CheckCircle, Clock, Activity, Calendar, Download } from 'lucide-react';
+import { usePermissions } from '../lib/AuthorizationService';
 import { supabase } from '../lib/supabase';
 
 type IssueStatus = 'Pending' | 'In Progress' | 'Resolved';
@@ -22,24 +23,10 @@ interface Issue {
 }
 
 export default function IssueTracker() {
+  const { hasPermission } = usePermissions();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   
-  useEffect(() => {
-    fetchIssues();
-
-    const subscription = supabase
-      .channel('issues_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'issues' }, () => {
-        fetchIssues();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, []);
-
   const fetchIssues = async () => {
     try {
 
@@ -59,7 +46,8 @@ export default function IssueTracker() {
         remarks: i.remarks,
         communicationStatus: i.communication_status,
         evidenceUrl: i.evidence_url,
-      })) || [];
+      }
+  )) || [];
       
       setIssues(formatted);
     } catch (error) {
@@ -68,6 +56,21 @@ export default function IssueTracker() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchIssues();
+
+    const subscription = supabase
+      .channel('issues_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'issues' }, () => {
+        fetchIssues();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -341,16 +344,18 @@ export default function IssueTracker() {
             <Download size={18} style={{ marginRight: '0.5rem' }} />
             Export Excel
           </button>
-          <button 
-            className="btn btn-primary"
-            onClick={() => { 
-              setCurrentIssue({ status: 'Pending', communicationStatus: false, date: new Date().toISOString().split('T')[0] }); 
-              setIsModalOpen(true); 
-            }}
-          >
-            <Plus size={18} style={{ marginRight: '0.5rem' }} />
-            Report Issue
-          </button>
+          {hasPermission('issues', 'CREATE') && (
+            <button 
+              className="btn btn-primary"
+              onClick={() => { 
+                setCurrentIssue({ status: 'Pending', communicationStatus: false, date: new Date().toISOString().split('T')[0] }); 
+                setIsModalOpen(true); 
+              }}
+            >
+              <Plus size={18} style={{ marginRight: '0.5rem' }} />
+              Report Issue
+            </button>
+          )}
         </div>
       </div>
 
@@ -415,30 +420,36 @@ export default function IssueTracker() {
                 </td>
                 <td>
                   <div className="flex gap-2">
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem' }} 
-                      title="View"
-                      onClick={() => { setCurrentIssue(issue); setIsViewModalOpen(true); }}
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem' }} 
-                      title="Edit"
-                      onClick={() => { setCurrentIssue(issue); setIsModalOpen(true); }}
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
-                      title="Delete"
-                      onClick={() => handleDelete(issue.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {hasPermission('issues', 'READ') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem' }} 
+                        title="View"
+                        onClick={() => { setCurrentIssue(issue); setIsViewModalOpen(true); }}
+                      >
+                        <Eye size={16} />
+                      </button>
+                    )}
+                    {hasPermission('issues', 'UPDATE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem' }} 
+                        title="Edit"
+                        onClick={() => { setCurrentIssue(issue); setIsModalOpen(true); }}
+                      >
+                        <Edit size={16} />
+                      </button>
+                    )}
+                    {hasPermission('issues', 'DELETE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
+                        title="Delete"
+                        onClick={() => handleDelete(issue.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

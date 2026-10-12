@@ -33,7 +33,7 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     if (userById) {
       publicUser = userById;
     } else if (user.email) {
-      // Try matching by email
+      // Try matching by exact email only — no fuzzy matching (security risk)
       const { data: userByEmail } = await supabaseAdmin
         .from('users')
         .select('*')
@@ -42,22 +42,11 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
 
       if (userByEmail) {
         publicUser = userByEmail;
-      } else {
-        // Try matching by username prefix
-        const prefix = user.email.split('@')[0];
-        const { data: userByName } = await supabaseAdmin
-          .from('users')
-          .select('*')
-          .ilike('username', `%${prefix}%`)
-          .limit(1);
-
-        if (userByName && userByName.length > 0) {
-          publicUser = userByName[0];
-        }
       }
     }
 
-    const resolvedRole = publicUser?.rbac_role_id || (publicUser?.role === 'Admin' ? 'Admin' : publicUser?.role === 'Project Manager' ? 'Manager' : publicUser?.role || 'User');
+    const roleLower = publicUser?.role ? publicUser.role.toLowerCase() : '';
+    const resolvedRole = publicUser?.rbac_role_id || (roleLower === 'admin' ? 'Admin' : roleLower === 'project manager' ? 'Manager' : publicUser?.role || 'User');
 
     req.user = {
       ...user,
@@ -73,7 +62,9 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
   }
 };
 
-export const requirePermission = (destination: string, action: string) => {
+import { rbacService } from '../services/rbac';
+
+export const requirePermission = (destination: string, action: 'CREATE' | 'READ' | 'UPDATE' | 'DELETE') => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       if (!req.user || !req.user.rbac_role_id) {
@@ -82,16 +73,9 @@ export const requirePermission = (destination: string, action: string) => {
 
       const roleId = req.user.rbac_role_id;
 
-      // Check permissions
-      const { data: permission, error } = await supabaseAdmin
-        .from('role_permissions')
-        .select('*')
-        .eq('role_id', roleId)
-        .eq('destination', destination)
-        .eq('action', action)
-        .single();
-
-      if (error || !permission) {
+      // Check permissions using the database RBAC matrix
+      const hasPerm = await rbacService.hasPermission(roleId, destination, action);
+      if (!hasPerm) {
         return res.status(403).json({ error: `Forbidden: Requires ${action} permission on ${destination}` });
       }
 

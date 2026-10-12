@@ -1,20 +1,19 @@
 import { Search, Eye, Edit, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { usePermissions } from '../lib/AuthorizationService';
 import { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function BudgetManagement() {
-  const [projects, setProjects] = useState<any[]>([]);
+  const { hasPermission } = usePermissions();
+  interface BudgetProject { id: string; name: string; code?: string; status: string; budget: number; actualCost: number; endDate?: string; }
+  const [projects, setProjects] = useState<BudgetProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [currentProject, setCurrentProject] = useState<any>({});
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  const [currentProject, setCurrentProject] = useState<Partial<BudgetProject>>({});
 
   const fetchProjects = async () => {
     try {
@@ -28,7 +27,7 @@ export default function BudgetManagement() {
       // Group billings by project_id
       const billingSums: Record<string, number> = {};
       if (billingsData) {
-        billingsData.forEach((b: any) => {
+        billingsData.forEach((b: { project_id?: string; invoice_amount?: number }) => {
           if (b.project_id) {
             billingSums[b.project_id] = (billingSums[b.project_id] || 0) + (Number(b.invoice_amount) || 0);
           }
@@ -52,6 +51,10 @@ export default function BudgetManagement() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   const filteredProjects = projects.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -163,34 +166,40 @@ export default function BudgetManagement() {
                 <td>{getStatusBadge(project.status)}</td>
                 <td>
                   <div className="flex gap-2">
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem' }} 
-                      title="View"
-                      onClick={() => { setCurrentProject(project); setIsViewModalOpen(true); }}
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem' }} 
-                      title="Edit Cost"
-                      onClick={() => { setCurrentProject(project); setIsEditModalOpen(true); }}
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
-                      title="Delete"
-                      onClick={() => {
-                        if(confirm('Are you sure you want to remove this project?')) {
-                          setProjects(projects.filter(p => p.id !== project.id));
-                        }
-                      }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {hasPermission('projects', 'READ') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem' }} 
+                        title="View"
+                        onClick={() => { setCurrentProject(project); setIsViewModalOpen(true); }}
+                      >
+                        <Eye size={16} />
+                      </button>
+                    )}
+                    {hasPermission('projects', 'UPDATE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem' }} 
+                        title="Edit Cost"
+                        onClick={() => { setCurrentProject(project); setIsEditModalOpen(true); }}
+                      >
+                        <Edit size={16} />
+                      </button>
+                    )}
+                    {hasPermission('projects', 'DELETE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
+                        title="Delete"
+                        onClick={() => {
+                          if(confirm('Are you sure you want to remove this project?')) {
+                            setProjects(projects.filter(p => p.id !== project.id));
+                          }
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -339,3 +348,4 @@ export default function BudgetManagement() {
     </div>
   );
 }
+

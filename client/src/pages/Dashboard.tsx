@@ -8,7 +8,6 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-
   useEffect(() => {
     fetchDashboardData();
 
@@ -23,6 +22,7 @@ export default function Dashboard() {
     };
   }, []);
 
+
   const fetchDashboardData = async () => {
     try {
       const { data: projectsData, error: projectsError } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
@@ -33,7 +33,7 @@ export default function Dashboard() {
 
       const billingSums: Record<string, number> = {};
       if (billingsData) {
-        billingsData.forEach((b: any) => {
+        billingsData.forEach((b: { project_id: string; invoice_amount: number | string }) => {
           if (b.project_id) {
             billingSums[b.project_id] = (billingSums[b.project_id] || 0) + (Number(b.invoice_amount) || 0);
           }
@@ -63,7 +63,13 @@ export default function Dashboard() {
   const overallBudget = projects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0);
   const actualCost = projects.reduce((sum, p) => sum + (Number(p.actual_cost) || 0), 0);
   
-  const activeMilestones = milestones.filter(m => m.status === 'In Progress' || m.status === 'Not Started').length;
+  const milestonesTotal = milestones.length;
+  const milestonesCompleted = milestones.filter(m => m.status === 'Completed').length;
+  const milestonesInProgress = milestones.filter(m => m.status === 'In Progress').length;
+  const milestonesNotStarted = milestones.filter(m => !m.status || m.status === 'Not Started').length;
+
+  const tasksTotal = tasks.length;
+  const tasksStarted = tasks.filter(t => t.status === 'Started').length;
   const tasksInProgress = tasks.filter(t => t.status === 'In Progress').length;
   const tasksCompleted = tasks.filter(t => t.status === 'Completed').length;
 
@@ -110,7 +116,7 @@ export default function Dashboard() {
   const taskStatusData = [
     { name: 'Completed', count: tasks.filter(t => t.status === 'Completed').length, fill: '#10b981' },
     { name: 'In Progress', count: tasks.filter(t => t.status === 'In Progress').length, fill: '#3b82f6' },
-    { name: 'Not Started', count: tasks.filter(t => !t.status || t.status === 'Not Started').length, fill: '#cbd5e1' },
+    { name: 'Not Started', count: tasks.filter(t => t.status === 'Started').length, fill: '#8b5cf6' },
     { name: 'Blocked', count: tasks.filter(t => t.status === 'Blocked').length, fill: '#ef4444' }
   ].filter(d => d.count > 0);
 
@@ -133,12 +139,14 @@ export default function Dashboard() {
         <div className="card glass-card">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-sm font-medium text-muted">Active Milestones</p>
-              <h3 className="text-3xl mt-1 text-slate-800">{activeMilestones}</h3>
+              <p className="text-sm font-medium text-muted">Total Milestones</p>
+              <h3 className="text-3xl mt-1 text-slate-800">{milestonesTotal}</h3>
             </div>
           </div>
-          <div className="text-sm">
-            <span className="font-medium text-muted">Across all projects</span>
+          <div className="text-sm flex flex-wrap items-center gap-2">
+            <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md text-xs">{milestonesCompleted} completed</span>
+            <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-md text-xs">{milestonesInProgress} in progress</span>
+            <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded-md text-xs">{milestonesNotStarted} not started</span>
           </div>
         </div>
 
@@ -146,12 +154,13 @@ export default function Dashboard() {
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-sm font-medium text-muted">Total Tasks</p>
-              <h3 className="text-3xl mt-1 text-slate-800">{tasks.length}</h3>
+              <h3 className="text-3xl mt-1 text-slate-800">{tasksTotal}</h3>
             </div>
           </div>
-          <div className="text-sm flex items-center gap-2">
+          <div className="text-sm flex flex-wrap items-center gap-2">
             <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md text-xs">{tasksCompleted} completed</span>
             <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-md text-xs">{tasksInProgress} in progress</span>
+            <span className="font-semibold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md text-xs">{tasksStarted} not started</span>
           </div>
         </div>
 

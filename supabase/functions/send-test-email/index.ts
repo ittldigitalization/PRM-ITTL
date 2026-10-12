@@ -20,6 +20,15 @@ const isPlausibleEmail = (v: unknown): v is string =>
   !/[\r\n]/.test(v) &&
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
+// Security: Escape HTML to prevent XSS injection in email content
+const escapeHtml = (str: string): string =>
+  str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 serve(async (req) => {
   // CORS preflight
   if (req.method === "OPTIONS") {
@@ -72,6 +81,7 @@ serve(async (req) => {
     });
 
     try {
+      const safeDescription = escapeHtml(description || "This is a test email sent from the Project Management System.");
       const info = await transporter.sendMail({
         from: smtpFrom,
         to,
@@ -80,7 +90,7 @@ serve(async (req) => {
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <h2 style="color: #2563eb;">📧 PMS Notification</h2>
-            <p>${description || "This is a test email sent from the Project Management System."}</p>
+            <p>${safeDescription}</p>
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
             <p style="font-size: 12px; color: #6b7280;">
               Sent from Indo Tech PMS &bull; If you didn't expect this, you can safely ignore it.

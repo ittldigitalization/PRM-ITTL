@@ -8,6 +8,25 @@ import {
   CreditCard 
 } from 'lucide-react';
 
+const StatCard = ({ title, value, icon: Icon, colorClass, delay, subtext }: { title: string; value: string | number; icon: any; colorClass: string; delay: string; subtext?: string }) => (
+  <div className="card glass-card animate-fade-in" style={{ animationDelay: delay }}>
+    <div className="flex justify-between items-start mb-4">
+      <div>
+        <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
+        <h3 className="text-2xl font-bold">{value}</h3>
+      </div>
+      <div className={`p-3 rounded-xl ${colorClass} bg-opacity-10`}>
+        <Icon className={`w-6 h-6 ${colorClass.replace('bg-', 'text-')}`} />
+      </div>
+    </div>
+    {subtext && (
+      <div className="mt-4 flex items-center text-sm text-muted-foreground">
+        <span>{subtext}</span>
+      </div>
+    )}
+  </div>
+);
+
 export default function AmcDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -21,21 +40,6 @@ export default function AmcDashboard() {
     scheduledVisits: 0,
     completedVisits: 0
   });
-
-  useEffect(() => {
-    fetchDashboardData();
-
-    // Setup realtime subscriptions
-    const subContracts = supabase.channel('amc_dash_contracts').on('postgres_changes', { event: '*', schema: 'public', table: 'amc_contracts' }, fetchDashboardData).subscribe();
-    const subVisits = supabase.channel('amc_dash_visits').on('postgres_changes', { event: '*', schema: 'public', table: 'amc_visits' }, fetchDashboardData).subscribe();
-    const subPayments = supabase.channel('amc_dash_payments').on('postgres_changes', { event: '*', schema: 'public', table: 'amc_payments' }, fetchDashboardData).subscribe();
-
-    return () => {
-      supabase.removeChannel(subContracts);
-      supabase.removeChannel(subVisits);
-      supabase.removeChannel(subPayments);
-    };
-  }, []);
 
   const fetchDashboardData = async () => {
     try {
@@ -82,7 +86,6 @@ export default function AmcDashboard() {
         scheduledVisits,
         completedVisits
       });
-
     } catch (error) {
       console.error('Error fetching AMC dashboard data:', error);
     } finally {
@@ -90,25 +93,22 @@ export default function AmcDashboard() {
     }
   };
 
-  const StatCard = ({ title, value, icon: Icon, colorClass, delay, subtext }: any) => (
-    <div className="card glass-card animate-fade-in" style={{ animationDelay: delay }}>
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <p className="text-sm font-medium text-muted">{title}</p>
-          <h3 className="text-3xl mt-1 text-slate-800">{value}</h3>
-        </div>
-        <div className={`p-3 rounded-xl shadow-sm ${colorClass}`}>
-          <Icon size={24} />
-        </div>
-      </div>
-      {subtext && (
-        <div className="text-sm">
-          <span className="font-medium text-muted">{subtext}</span>
-        </div>
-      )}
-    </div>
-  );
+  useEffect(() => {
+    fetchDashboardData();
 
+    // Setup realtime subscriptions
+    const subContracts = supabase.channel('amc_dash_contracts').on('postgres_changes', { event: '*', schema: 'public', table: 'amc_contracts' }, fetchDashboardData).subscribe();
+    const subVisits = supabase.channel('amc_dash_visits').on('postgres_changes', { event: '*', schema: 'public', table: 'amc_visits' }, fetchDashboardData).subscribe();
+    const subPayments = supabase.channel('amc_dash_payments').on('postgres_changes', { event: '*', schema: 'public', table: 'amc_payments' }, fetchDashboardData).subscribe();
+
+    return () => {
+      supabase.removeChannel(subContracts);
+      supabase.removeChannel(subVisits);
+      supabase.removeChannel(subPayments);
+    };
+  }, []);
+
+  
   return (
     <div className="flex flex-col gap-6 p-2">
       <div className="flex justify-between items-center border-b pb-4">

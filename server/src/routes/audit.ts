@@ -1,6 +1,6 @@
 import express from 'express';
 import { supabaseAdmin } from '../index';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, requirePermission } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -28,7 +28,7 @@ export const logAudit = async (
   }
 };
 
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', requirePermission('access_hub', 'READ'), async (req: AuthRequest, res) => {
   try {
     const { data, error } = await supabaseAdmin
       .from('audit_logs')
@@ -41,7 +41,7 @@ router.get('/', async (req: AuthRequest, res) => {
 
     res.json(data);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch audit logs' });
   }
 });
 

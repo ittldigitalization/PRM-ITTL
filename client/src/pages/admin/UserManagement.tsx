@@ -198,7 +198,7 @@ const UserManagement: React.FC = () => {
                 <td style={{ padding: '1rem' }}>{user.email || user.username || '-'}</td>
                 <td style={{ padding: '1rem' }}>{user.department || '-'}</td>
                 <td style={{ padding: '1rem' }}>
-                  {user.rbac_role_id || 'None'}
+                  {availableRoles.find(r => r.id === user.rbac_role_id)?.name || user.rbac_role_id || 'None'}
                 </td>
                 <td style={{ padding: '1rem' }}>
                   <span style={{

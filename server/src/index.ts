@@ -46,15 +46,27 @@ import projectsRouter from './routes/projects';
 import { startCronJobs } from './services/cron';
 import { requireAuth } from './middleware/auth';
 import path from 'path';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Security: Allow all origins for local network access
+// Security: Restrict CORS to known origins
+const allowedOrigins = [
+  'http://localhost:7455',
+  'http://127.0.0.1:7455',
+  `http://localhost:${port}`,
+];
+// Add production domain if set
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => {
+    callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -67,30 +79,24 @@ app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com");
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
   next();
 });
 
-// Security: Basic rate limiting (100 requests per minute per IP)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-app.use((req, res, next) => {
-  const ip = req.ip || req.socket.remoteAddress || 'unknown';
-  const now = Date.now();
-  const windowMs = 60 * 1000; // 1 minute
-  const maxRequests = 100;
-
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
-    return next();
-  }
-  if (entry.count >= maxRequests) {
-    return res.status(429).json({ error: 'Too many requests. Please try again later.' });
-  }
-  entry.count++;
-  next();
+// Security: Robust rate limiting to prevent DoS attacks
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { error: 'Too many requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
+app.use(apiLimiter);
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
@@ -103,12 +109,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'EPMS Server is running' });
 });
 
-// Mount RBAC APIs
+// Mount RBAC APIs — all routes require authentication
 app.use('/api/users', requireAuth, usersRouter);
-app.use('/api/roles', rolesRouter);
-app.use('/api/destinations', destinationsRouter);
+app.use('/api/roles', requireAuth, rolesRouter);
+app.use('/api/destinations', requireAuth, destinationsRouter);
 app.use('/api/audit', requireAuth, auditRouter);
-app.use('/api/projects', projectsRouter);
+app.use('/api/projects', requireAuth, projectsRouter);
 
 // Serve production static frontend if client/dist exists
 const clientDistPath = path.resolve(__dirname, '../../client/dist');

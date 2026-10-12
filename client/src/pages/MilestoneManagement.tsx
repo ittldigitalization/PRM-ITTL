@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X } from 'lucide-react';
+import { usePermissions } from '../lib/AuthorizationService';
 import { supabase } from '../lib/supabase';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -26,32 +27,18 @@ interface Milestone {
 
 export default function MilestoneManagement() {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<any[]>([]);
+  const { hasPermission } = usePermissions();
+  interface MilestoneProject { id: string; name: string; code?: string; start_date?: string; end_date?: string; startDate?: string; endDate?: string; }
+  const [projects, setProjects] = useState<MilestoneProject[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
   
-  useEffect(() => {
-    fetchProjects();
-    fetchMilestones();
-
-    const subscription = supabase
-      .channel('milestones_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'milestones' }, () => {
-        fetchMilestones();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, []);
-
   const fetchProjects = async () => {
     const { data } = await supabase.from('projects').select('id, name, start_date, end_date');
     if (data) setProjects(data);
   };
 
-  const fetchMilestones = async () => {
+const fetchMilestones = async () => {
     try {
 
       const { data, error } = await supabase.from('milestones').select('*, projects(name, code)').order('start_date', { ascending: true });
@@ -74,7 +61,10 @@ export default function MilestoneManagement() {
         progress: m.progress || 0,
         isManualProgress: m.is_manual_progress || false,
         status: m.status
-      })) || [];
+      }
+  
+
+  )) || [];
       
       setMilestones(formatted);
     } catch (error) {
@@ -83,6 +73,22 @@ export default function MilestoneManagement() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProjects();
+    fetchMilestones();
+
+    const subscription = supabase
+      .channel('milestones_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'milestones' }, () => {
+        fetchMilestones();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState('');
   const location = useLocation();
@@ -231,9 +237,9 @@ export default function MilestoneManagement() {
       setIsModalOpen(false);
       setCurrentMilestone({});
       fetchMilestones();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving milestone:', error);
-      alert('Failed to save milestone: ' + (error.message || JSON.stringify(error)));
+      alert('Failed to save milestone: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
     }
   };
 
@@ -243,9 +249,9 @@ export default function MilestoneManagement() {
         const { error } = await supabase.from('milestones').delete().eq('id', id);
         if (error) throw error;
         fetchMilestones();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error deleting milestone:', error);
-        alert('Failed to delete milestone: ' + (error.message || JSON.stringify(error)));
+        alert('Failed to delete milestone: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
       }
     }
   };
@@ -257,9 +263,9 @@ export default function MilestoneManagement() {
         if (error) throw error;
         setSelectedMilestones([]);
         fetchMilestones();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error deleting milestones:', error);
-        alert('Failed to delete selected milestones');
+        alert('Failed to delete selected milestones: ' + (error instanceof Error ? error.message : 'Unknown error'));
       }
     }
   };
@@ -290,7 +296,7 @@ export default function MilestoneManagement() {
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
-          {selectedMilestones.length > 0 && (
+          {selectedMilestones.length > 0 && hasPermission('milestones', 'DELETE') && (
             <button 
               className="btn btn-outline"
               style={{ color: 'var(--destructive)', borderColor: 'var(--destructive)', padding: '0.5rem 1rem' }}
@@ -300,13 +306,16 @@ export default function MilestoneManagement() {
               Delete Selected ({selectedMilestones.length})
             </button>
           )}
-          <button 
-            className="btn btn-primary"
-            onClick={() => { setCurrentMilestone({ status: 'Not Started' }); setIsModalOpen(true); }}
-          >
-            <Plus size={18} style={{ marginRight: '0.5rem' }} />
-            Add Milestone
-          </button>
+          {hasPermission('milestones', 'CREATE') && (
+            <button 
+              className="btn btn-primary" 
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
+              onClick={() => { setCurrentMilestone({ status: 'Not Started' }); setIsModalOpen(true); }}
+            >
+              <Plus size={18} />
+              Add Milestone
+            </button>
+          )}
         </div>
       </div>
 
@@ -386,30 +395,36 @@ export default function MilestoneManagement() {
                 </td>
                 <td>
                   <div className="flex gap-2">
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem' }} 
-                      title="View"
-                      onClick={() => { setCurrentMilestone(milestone); setIsViewModalOpen(true); }}
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem' }} 
-                      title="Edit"
-                      onClick={() => { setCurrentMilestone(milestone); setIsModalOpen(true); }}
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
-                      title="Delete"
-                      onClick={() => handleDelete(milestone.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {hasPermission('milestones', 'READ') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem' }} 
+                        title="View"
+                        onClick={() => { setCurrentMilestone(milestone); setIsViewModalOpen(true); }}
+                      >
+                        <Eye size={16} />
+                      </button>
+                    )}
+                    {hasPermission('milestones', 'UPDATE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem' }} 
+                        title="Edit"
+                        onClick={() => { setCurrentMilestone(milestone); setIsModalOpen(true); }}
+                      >
+                        <Edit size={16} />
+                      </button>
+                    )}
+                    {hasPermission('milestones', 'DELETE') && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.25rem 0.5rem', color: 'var(--destructive)' }} 
+                        title="Delete"
+                        onClick={() => handleDelete(milestone.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -453,8 +468,8 @@ export default function MilestoneManagement() {
                       projectId: e.target.value, 
                       projectName: proj?.name,
                       // Prioritize the new project's dates so they correctly fetch and overwrite when changing projects
-                      startDate: (proj as any)?.start_date || currentMilestone.startDate,
-                      endDate: (proj as any)?.end_date || currentMilestone.endDate
+                      startDate: proj?.start_date || proj?.startDate || currentMilestone.startDate,
+                      endDate: proj?.end_date || proj?.endDate || currentMilestone.endDate
                     });
                   }}
                 >

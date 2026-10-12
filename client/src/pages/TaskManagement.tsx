@@ -38,39 +38,24 @@ interface Task {
 export default function TaskManagement() {
   const { hasPermission } = usePermissions();
   const { currentUserName } = useTeamMembers();
-  const [projects, setProjects] = useState<any[]>([]);
-  const [milestones, setMilestones] = useState<any[]>([]);
+  interface TaskProject { id: string; name: string; code?: string; }
+  interface TaskMilestone { id: string; name: string; project_id: string; start_date?: string; end_date?: string; startDate?: string; endDate?: string; }
+  const [projects, setProjects] = useState<TaskProject[]>([]);
+  const [milestones, setMilestones] = useState<TaskMilestone[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   
-  useEffect(() => {
-    fetchProjects();
-    fetchMilestones();
-    fetchTasks();
-
-    const subscription = supabase
-      .channel('tasks_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
-        fetchTasks();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, []);
-
   const fetchProjects = async () => {
     const { data } = await supabase.from('projects').select('id, name');
     if (data) setProjects(data);
   };
 
-  const fetchMilestones = async () => {
+const fetchMilestones = async () => {
     const { data } = await supabase.from('milestones').select('id, project_id, name, start_date, end_date');
     if (data) setMilestones(data);
   };
 
-  const fetchTasks = async () => {
+const fetchTasks = async () => {
     try {
 
       const { data, error } = await supabase.from('tasks').select('*, projects(name, code), milestones(name)').order('created_at', { ascending: false });
@@ -99,7 +84,12 @@ export default function TaskManagement() {
         role: t.role,
         documentUrl: t.document_url,
         remarks: t.remarks
-      })) || [];
+      }
+  
+
+  
+
+  )) || [];
       
       setTasks(formatted);
     } catch (error) {
@@ -108,6 +98,23 @@ export default function TaskManagement() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProjects();
+    fetchMilestones();
+    fetchTasks();
+
+    const subscription = supabase
+      .channel('tasks_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
+        fetchTasks();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
 
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>('individual');
@@ -250,9 +257,9 @@ export default function TaskManagement() {
       setIsModalOpen(false);
       setCurrentTask({});
       fetchTasks();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving task:', error);
-      alert('Failed to save task: ' + (error.message || JSON.stringify(error)));
+      alert('Failed to save task: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
     }
   };
 
@@ -268,11 +275,10 @@ export default function TaskManagement() {
 
         // Cascade Progress after delete
         await cascadeProgress(task.milestoneId || '', task.projectId || '');
-        
-        fetchTasks();
-      } catch (error: any) {
+                fetchTasks();
+      } catch (error: unknown) {
         console.error('Error deleting task:', error);
-        alert('Failed to delete task: ' + (error.message || JSON.stringify(error)));
+        alert('Failed to delete task: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
       }
     }
   };
@@ -571,8 +577,8 @@ export default function TaskManagement() {
                       setCurrentTask({
                         ...currentTask, 
                         milestoneId: e.target.value,
-                        startDate: (ms as any)?.start_date || (ms as any)?.startDate || currentTask.startDate,
-                        endDate: (ms as any)?.end_date || (ms as any)?.endDate || currentTask.endDate
+                        startDate: ms?.start_date || ms?.startDate || currentTask.startDate,
+                        endDate: ms?.end_date || ms?.endDate || currentTask.endDate
                       });
                     }}
                   >

@@ -19,6 +19,20 @@ export default function CustomerManagement() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [currentCustomer, setCurrentCustomer] = useState<Partial<Customer>>({});
   
+  const fetchCustomers = async () => {
+    try {
+
+      const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      setCustomers(data || []);
+    }
+   catch (error) {
+      console.error('Error fetching customers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchCustomers();
 
@@ -33,19 +47,6 @@ export default function CustomerManagement() {
       supabase.removeChannel(subscription);
     };
   }, []);
-
-  const fetchCustomers = async () => {
-    try {
-
-      const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-      setCustomers(data || []);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredCustomers = customers.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase())

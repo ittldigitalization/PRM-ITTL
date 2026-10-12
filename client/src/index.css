@@ -1,20 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
 
-:root, [data-theme='light'] {
-  /* Modern SaaS Indigo Palette (Light Mode) */
-  --background: #F9FAFB; 
-  --foreground: #111827; 
-  --muted: #F3F4F6; 
-  --muted-foreground: #6B7280; 
-  --accent: #4F46E5; /* Vibrant Indigo */
-  --accent-secondary: #4338CA;
-  --accent-foreground: #FFFFFF; 
-  --primary: #4F46E5;
+:root, [data-theme='light'], [data-theme='dark'] {
+  /* Enterprise Light/Navy Corporate Theme */
+  --background: #F8FAFC; /* Clean Slate 50 background */
+  --foreground: #0F172A; /* Slate 900 */
+  --muted: #F1F5F9; /* Slate 100 */
+  --muted-foreground: #64748B; /* Slate 500 */
+  
+  --accent: #1E293B; /* Navy Accent */
+  --accent-secondary: #334155;
+  --accent-foreground: #FFFFFF;
+  
+  --primary: #2563EB; /* Professional subtle blue */
   --primary-foreground: #FFFFFF;
-  --border: #E5E7EB; 
-  --card: #FFFFFF; 
-  --card-foreground: #111827;
-  --ring: rgba(79, 70, 229, 0.4);
+  
+  --border: #E2E8F0; /* Slate 200 borders */
+  --card: #FFFFFF; /* Pure white cards */
+  --card-foreground: #0F172A;
+  --ring: rgba(37, 99, 235, 0.4);
   
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
@@ -22,71 +25,27 @@
   --success-foreground: #FFFFFF;
   --warning: #F59E0B;
   --warning-foreground: #FFFFFF;
-  --input: #E5E7EB;
+  --input: #FFFFFF;
   
-  --radius: 12px;
-  --sidebar-width: 280px;
-  --header-height: 80px;
+  --radius: 8px; /* Professional medium corners */
+  --sidebar-width: 260px;
+  --header-height: 64px;
   
-  /* Modern smooth layered shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  /* Soft, subtle shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 
   /* Structural UI elements */
   --sidebar-bg: #FFFFFF;
-  --header-bg: rgba(255, 255, 255, 0.8);
-  --nav-text: #6B7280;
-  --nav-text-hover: #111827;
-  --nav-active-text: #4F46E5;
-  --nav-active-bg: #EEF2FF;
-  --search-bg: #F3F4F6;
-  --trigger-bg: #F9FAFB;
-}
-
-[data-theme='dark'] {
-  /* Ultra-Sleek Dark Mode */
-  --background: #0B0F19; 
-  --foreground: #F9FAFB; 
-  --muted: #1F2937; 
-  --muted-foreground: #9CA3AF; 
-  --accent: #6366F1; /* Brighter Indigo for dark mode */
-  --accent-secondary: #818CF8;
-  --accent-foreground: #FFFFFF; 
-  --primary: #6366F1;
-  --primary-foreground: #FFFFFF;
-  --border: #1F2937; 
-  --card: #111827; 
-  --card-foreground: #F9FAFB;
-  --ring: rgba(99, 102, 241, 0.5);
-  
-  --destructive: #F87171;
-  --destructive-foreground: #111827;
-  --success: #34D399;
-  --success-foreground: #111827;
-  --warning: #FBBF24;
-  --warning-foreground: #111827;
-  --input: #374151;
-  
-  --radius: 12px;
-  --sidebar-width: 280px;
-  --header-height: 80px;
-  
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
-
-  /* Structural UI elements */
-  --sidebar-bg: #111827;
-  --header-bg: rgba(17, 24, 39, 0.8);
-  --nav-text: #9CA3AF;
-  --nav-text-hover: #F9FAFB;
-  --nav-active-text: #818CF8;
-  --nav-active-bg: rgba(99, 102, 241, 0.15);
-  --search-bg: #1F2937;
-  --trigger-bg: #1F2937;
+  --header-bg: #FFFFFF;
+  --nav-text: #475569;
+  --nav-text-hover: #0F172A;
+  --nav-active-text: #2563EB;
+  --nav-active-bg: #EFF6FF; /* Very soft blue active background */
+  --search-bg: #F1F5F9;
+  --trigger-bg: #F8FAFC;
 }
 
 * {

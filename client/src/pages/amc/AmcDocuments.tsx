@@ -14,6 +14,7 @@ interface Document {
 }
 
 export default function AmcDocuments() {
+
   const [contracts, setContracts] = useState<any[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,27 +25,6 @@ export default function AmcDocuments() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  useEffect(() => {
-    fetchContracts();
-    fetchDocuments();
-
-    const sub = supabase
-      .channel('amc_documents_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'amc_documents' }, () => {
-        fetchDocuments();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(sub);
-    };
-  }, []);
-
-  const fetchContracts = async () => {
-    const { data } = await supabase.from('amc_contracts').select('id, amc_number, customers(name)');
-    if (data) setContracts(data);
-  };
-
   const fetchDocuments = async () => {
     try {
 
@@ -70,6 +50,29 @@ export default function AmcDocuments() {
     }
   };
 
+const fetchContracts = async () => {
+    const { data } = await supabase.from('amc_contracts').select('id, amc_number, customers(name)');
+    if (data) setContracts(data);
+  };
+
+  useEffect(() => {
+    fetchContracts();
+    fetchDocuments();
+
+    const sub = supabase
+      .channel('amc_documents_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'amc_documents' }, () => {
+        fetchDocuments();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(sub);
+    };
+  }, []);
+
+  
+  
   const filteredDocuments = documents.filter(d => 
     d.fileName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     d.amcNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,9 +146,9 @@ export default function AmcDocuments() {
       setIsModalOpen(false);
       setSelectedAmcId('');
       fetchDocuments();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving document:', error);
-      alert('Failed to save document: ' + (error.message || JSON.stringify(error)));
+      alert('Failed to save document: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
     }
   };
 
@@ -155,9 +158,9 @@ export default function AmcDocuments() {
         const { error } = await supabase.from('amc_documents').delete().eq('id', id);
         if (error) throw error;
         fetchDocuments();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error deleting document:', error);
-        alert('Failed to delete document: ' + (error.message || JSON.stringify(error)));
+        alert('Failed to delete document: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
       }
     }
   };

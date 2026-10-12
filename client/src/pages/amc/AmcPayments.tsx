@@ -12,6 +12,23 @@ export default function AmcPayments() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [currentPayment, setCurrentPayment] = useState<any>({});
   
+  async function fetchData() {
+    try {
+
+      const [paymentsRes, contractsRes] = await Promise.all([
+        supabase.from('amc_payments').select('*, amc_contracts(amc_number, contract_name, customers(name))').order('created_at', { ascending: false }),
+        supabase.from('amc_contracts').select('id, amc_number, contract_amount, customers(name), amc_payments(amount, gst, paid_amount)')
+      ]);
+
+      setPayments(paymentsRes.data || []);
+      setContracts(contractsRes.data || []);
+    } catch (error) {
+      console.error('Error fetching AMC payments:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     fetchData();
 
@@ -27,22 +44,6 @@ export default function AmcPayments() {
     };
   }, []);
 
-  const fetchData = async () => {
-    try {
-
-      const [paymentsRes, contractsRes] = await Promise.all([
-        supabase.from('amc_payments').select('*, amc_contracts(amc_number, contract_name, customers(name))').order('created_at', { ascending: false }),
-        supabase.from('amc_contracts').select('id, amc_number, contract_amount, customers(name), amc_payments(amount, gst, paid_amount)')
-      ]);
-
-      setPayments(paymentsRes.data || []);
-      setContracts(contractsRes.data || []);
-    } catch (error) {
-      console.error('Error fetching AMC payments:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredPayments = payments.filter(p => 
     p.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -96,9 +97,9 @@ export default function AmcPayments() {
       setIsModalOpen(false);
       setCurrentPayment({});
       fetchData();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving payment:', error);
-      alert('Failed to save payment: ' + (error.message || JSON.stringify(error)));
+      alert('Failed to save payment: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
     }
   };
 
@@ -118,9 +119,9 @@ export default function AmcPayments() {
         const { error } = await supabase.from('amc_payments').delete().eq('id', id);
         if (error) throw error;
         fetchData();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error deleting payment:', error);
-        alert('Failed to delete payment: ' + (error.message || JSON.stringify(error)));
+        alert('Failed to delete payment: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
       }
     }
   };
@@ -262,7 +263,7 @@ export default function AmcPayments() {
                 let contractRemaining = 0;
                 let contractTotal = 0;
                 if (selectedContract) {
-                  const pastInvoiced = selectedContract.amc_payments?.reduce((s: number, p: any) => s + (Number(p.amount) || 0), 0) || 0;
+                  const pastInvoiced = selectedContract.amc_payments?.reduce((s: number, p: { amount: number }) => s + (Number(p.amount) || 0), 0) || 0;
                   contractTotal = Number(selectedContract.contract_amount) || 0;
                   
                   // If we are editing an existing payment, we shouldn't double count its previous invoiced amount against the remaining balance

@@ -4,6 +4,15 @@ import { supabase } from '../lib/supabase';
 import { useTeamMembers } from '../hooks/useTeamMembers';
 import { usePermissions } from '../lib/AuthorizationService';
 
+const API_BASE_URL = typeof window !== 'undefined' 
+  ? `${window.location.protocol}//${window.location.hostname}:5000/api` 
+  : 'http://localhost:5000/api';
+
+const getAuthToken = async () => {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token;
+};
+
 type UserStatus = 'Active' | 'Inactive' | 'On Leave';
 
 interface TeamMember {
@@ -15,7 +24,7 @@ interface TeamMember {
 }
 
 export default function TeamManagement() {
-  const { hasPermission } = usePermissions();
+  const { hasPermission, userRole } = usePermissions();
   const { currentUserName } = useTeamMembers();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,10 +52,14 @@ export default function TeamManagement() {
   const fetchMembers = async () => {
     try {
 
-      const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
+      const token = await getAuthToken();
+      const res = await fetch(`${API_BASE_URL}/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch members');
+      const data = await res.json();
 
-      const formatted = data?.map(u => ({
+      const formatted = data?.map((u: any) => ({
         id: u.id,
         name: u.username,
         email: u.email || '',
@@ -84,38 +97,58 @@ export default function TeamManagement() {
     e.preventDefault();
     
     const dbUser = {
-      username: currentMember.name,
-      email: currentMember.email || null,
-      role: 'Team Member',
+      email: currentMember.email || '',
+      password: '',
+      rbac_role_id: currentMember.role || 'Team Member',
       status: currentMember.status || 'Active'
     };
 
     try {
-      if (currentMember.id) {
-        const { error } = await supabase.from('users').update(dbUser).eq('id', currentMember.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('users').insert([dbUser]);
-        if (error) throw error;
+      const token = await getAuthToken();
+      const url = currentMember.id 
+        ? `${API_BASE_URL}/users/${currentMember.id}` 
+        : `${API_BASE_URL}/users`;
+        
+      const res = await fetch(url, {
+        method: currentMember.id ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(dbUser)
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to save team member');
       }
       setIsModalOpen(false);
       setCurrentMember({});
       fetchMembers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving team member:', error);
-      alert('Failed to save team member: ' + (error.message || JSON.stringify(error)));
+      alert('Failed to save team member: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
     }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this team member?')) {
       try {
-        const { error } = await supabase.from('users').delete().eq('id', id);
-        if (error) throw error;
+        const token = await getAuthToken();
+        const res = await fetch(`${API_BASE_URL}/users/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (!res.ok) {
+           const errData = await res.json();
+           throw new Error(errData.error || 'Failed to delete team member');
+        }
+        
         fetchMembers();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error deleting team member:', error);
-        alert('Failed to delete team member: ' + (error.message || JSON.stringify(error)));
+        alert('Failed to delete team member: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
       }
     }
   };
@@ -151,7 +184,7 @@ export default function TeamManagement() {
               All Members
             </button>
           </div>
-          {hasPermission('team', 'CREATE') && (
+          {userRole === 'Admin' && (
             <button 
               className="btn btn-primary"
               onClick={() => { setCurrentMember({ name: currentUserName || '', status: 'Active' }); setIsModalOpen(true); }}

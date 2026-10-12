@@ -30,28 +30,13 @@ interface Project {
 export default function ProjectManagement() {
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'All' | 'Internal project' | 'External project'>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState<Partial<Project>>({});
-
-  useEffect(() => {
-    fetchProjects();
-
-    const subscription = supabase
-      .channel('projects_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
-        fetchProjects();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, []);
 
   const fetchProjects = async () => {
     try {
@@ -79,7 +64,8 @@ export default function ProjectManagement() {
         progress: p.progress || 0,
         isManualProgress: p.is_manual_progress || false,
         managerName: p.manager_name
-      })) || [];
+      }
+  )) || [];
       
       setProjects(formattedProjects);
     } catch (error) {
@@ -89,6 +75,21 @@ export default function ProjectManagement() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProjects();
+
+    const subscription = supabase
+      .channel('projects_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
+        fetchProjects();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
 
   const filteredProjects = projects.filter(p => 
     (typeFilter === 'All' || p.type === typeFilter || (typeFilter === 'Internal project' && !p.type)) &&
@@ -189,9 +190,9 @@ export default function ProjectManagement() {
       setIsModalOpen(false);
       setCurrentProject({});
       fetchProjects(); // Refresh list
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving project:', error);
-      alert('Failed to save project to backend: ' + (error.message || JSON.stringify(error)));
+      alert('Failed to save project to backend: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
     }
   };
 
@@ -267,7 +268,7 @@ export default function ProjectManagement() {
             className="form-input" 
             style={{ width: '200px', padding: '0.5rem' }}
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as any)}
+            onChange={(e) => setTypeFilter(e.target.value as 'All' | 'Internal project' | 'External project')}
           >
             <option value="All">All Projects</option>
             <option value="Internal project">Internal Projects</option>
@@ -427,7 +428,7 @@ export default function ProjectManagement() {
                   <select 
                     className="form-input"
                     value={currentProject.type || 'Internal project'}
-                    onChange={e => setCurrentProject({...currentProject, type: e.target.value as any})}
+                    onChange={e => setCurrentProject({...currentProject, type: e.target.value as 'Internal project' | 'External project'})}
                   >
                     <option value="Internal project">Internal project</option>
                     <option value="External project">External project</option>

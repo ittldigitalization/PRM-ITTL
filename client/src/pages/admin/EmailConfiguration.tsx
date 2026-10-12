@@ -14,7 +14,12 @@ const EmailConfiguration: React.FC = () => {
     status: 'Enabled',
   });
   const [sending, setSending] = useState(false);
-  const [users, setUsers] = useState<any[]>([]);
+  interface EmailUser {
+    id: string;
+    email: string;
+    username: string;
+  }
+  const [users, setUsers] = useState<EmailUser[]>([]);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const showToast = (type: 'success' | 'error', message: string) => {
@@ -71,7 +76,8 @@ const EmailConfiguration: React.FC = () => {
         // Unwrap the real error body from the edge function response
         let detail = error.message;
         try {
-          const body = await (error as any).context?.json();
+          const edgeError = error as { context?: { json: () => Promise<{ error?: string; responseCode?: string }> } };
+          const body = await edgeError.context?.json();
           if (body?.error) detail = body.error;
           if (body?.responseCode) detail += ` (SMTP code: ${body.responseCode})`;
         } catch {}
@@ -79,8 +85,8 @@ const EmailConfiguration: React.FC = () => {
       } else {
         showToast('success', `Email sent successfully to ${formData.to}!`);
       }
-    } catch (err: any) {
-      showToast('error', err?.message || 'Unexpected error sending email.');
+    } catch (err: unknown) {
+      showToast('error', err instanceof Error ? err.message : 'Unexpected error sending email.');
     } finally {
       setSending(false);
     }
@@ -174,7 +180,7 @@ const EmailConfiguration: React.FC = () => {
             style={inputStyle}
           >
             <option value="">Select recipient...</option>
-            {users.map((u: any) => (
+            {users.map((u) => (
               <option key={u.id} value={u.email}>{u.email}</option>
             ))}
           </select>

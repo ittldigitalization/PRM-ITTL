@@ -25,8 +25,13 @@ const formatDuration = (totalDays: number): string => {
   return parts.join(' ') || '0d';
 };
 
+interface ExtendedTask extends Task {
+  project?: string;
+  statusStr?: string;
+}
+
 /* ── Tree Connector Helper ─────────────────────────────────────── */
-const getTreeInfo = (task: Task, allTasks: Task[]) => {
+const getTreeInfo = (task: ExtendedTask, allTasks: ExtendedTask[]) => {
   const isProject = task.id.startsWith('p-');
   const isMilestone = task.id.startsWith('m-');
   const isTask = task.id.startsWith('t-');
@@ -36,8 +41,8 @@ const getTreeInfo = (task: Task, allTasks: Task[]) => {
   }
 
   // Find siblings (items sharing the same parent)
-  const parentId = (task as any).project;
-  const siblings = allTasks.filter(t => (t as any).project === parentId);
+  const parentId = task.project;
+  const siblings = allTasks.filter(t => t.project === parentId);
   const isLast = siblings.indexOf(task) === siblings.length - 1;
 
   if (isMilestone) {
@@ -53,10 +58,10 @@ const getTreeInfo = (task: Task, allTasks: Task[]) => {
     // Task is depth 2 — need connector for its parent milestone AND for itself
     const milestoneParentId = parentId; // e.g. "m-xxx"
     const milestoneTask = allTasks.find(t => t.id === milestoneParentId);
-    const grandParentId = milestoneTask ? (milestoneTask as any).project : null;
+    const grandParentId = milestoneTask ? milestoneTask.project : null;
 
     // Is the parent milestone the last among its siblings?
-    const milestoneSiblings = allTasks.filter(t => (t as any).project === grandParentId);
+    const milestoneSiblings = allTasks.filter(t => t.project === grandParentId);
     const isMilestoneLast = milestoneTask ? milestoneSiblings.indexOf(milestoneTask) === milestoneSiblings.length - 1 : false;
 
     // First connector: continuing line from grandparent (project → milestone level)
@@ -267,7 +272,7 @@ export default function GanttChart() {
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Month);
   const [searchQuery, setSearchQuery] = useState('');
   const [projectFilter, setProjectFilter] = useState('All');
-  const [projectsList, setProjectsList] = useState<any[]>([]);
+  const [projectsList, setProjectsList] = useState<{ id: string; name: string }[]>([]);
 
   const getColor = (status: string) => {
     if (status === 'On Hold' || status === 'Hold') return '#facc15'; // Yellow
@@ -287,7 +292,7 @@ export default function GanttChart() {
     return new Date();
   };
 
-  const getSafeDates = (actualStart: any, start: any, plannedStart: any, actualEnd: any, end: any, plannedEnd: any) => {
+  const getSafeDates = (actualStart: string | null, start: string | null, plannedStart: string | null, actualEnd: string | null, end: string | null, plannedEnd: string | null) => {
     let startDate = getValidDate(actualStart, start, plannedStart);
     let endDate = getValidDate(actualEnd, end, plannedEnd);
     
@@ -343,8 +348,8 @@ export default function GanttChart() {
             progressSelectedColor: getColor(p.status),
             backgroundColor: getColor(p.status)
           },
-          statusStr: p.status
-        } as any;
+          statusStr: String(p.status)
+        } as ExtendedTask;
 
         if (isExternalProject) formattedTasks.push(projectTask);
         if (isInternalProject) individualTasks.push(projectTask);
@@ -374,7 +379,7 @@ export default function GanttChart() {
              },
              project: `p-${p.id}`,
              statusStr: m.status
-          } as any;
+          } as ExtendedTask;
 
           if (isExternalProject) formattedTasks.push(milestoneTask);
           if (isInternalProject) individualTasks.push(milestoneTask);
@@ -402,7 +407,7 @@ export default function GanttChart() {
                },
                project: `m-${m.id}`,
                statusStr: t.status
-            } as any;
+            } as ExtendedTask;
             
             if (isExternalProject) formattedTasks.push(taskObj);
             if (isInternalProject) individualTasks.push(taskObj);
@@ -431,7 +436,7 @@ export default function GanttChart() {
              },
              project: `p-${p.id}`,
              statusStr: t.status
-          } as any;
+          } as ExtendedTask;
           
           if (isExternalProject) formattedTasks.push(taskObj);
           if (isInternalProject) individualTasks.push(taskObj);
@@ -572,7 +577,7 @@ export default function GanttChart() {
             onChange={(e) => setProjectFilter(e.target.value)}
           >
             <option value="All">All Projects</option>
-            {projectsList.filter(p => activeTab === 'team' ? p.type === 'External project' : p.type !== 'External project').map(p => (
+            {(projectsList as any[]).filter(p => activeTab === 'team' ? p.type === 'External project' : p.type !== 'External project').map(p => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>

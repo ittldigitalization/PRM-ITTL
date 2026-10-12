@@ -93,11 +93,12 @@ export const RbacProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       const userData = await userRes.json();
-      const roleId = userData.rbac_role_id || (userData.role === 'Admin' ? 'Admin' : 'User');
+      const userRoleLower = userData.role ? userData.role.toLowerCase() : '';
+      const roleId = userData.rbac_role_id || (userRoleLower === 'admin' ? 'Admin' : 'User');
       setUserRole(roleId);
 
       // 2. Fetch permissions for this role
-      if (roleId === 'Admin') {
+      if (roleId === 'Admin' || userRoleLower === 'admin') {
         // Admins have all permissions
         setLoading(false);
         return;

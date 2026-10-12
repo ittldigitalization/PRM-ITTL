@@ -15,21 +15,6 @@ export default function AmcContracts() {
   
   const [currentContract, setCurrentContract] = useState<any>({});
   
-  useEffect(() => {
-    fetchData();
-
-    const sub = supabase
-      .channel('amc_contracts_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'amc_contracts' }, () => {
-        fetchData();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(sub);
-    };
-  }, []);
-
   const fetchData = async () => {
     try {
 
@@ -47,8 +32,24 @@ export default function AmcContracts() {
     }
   };
 
+  useEffect(() => {
+    fetchData();
+
+    const sub = supabase
+      .channel('amc_contracts_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'amc_contracts' }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(sub);
+    };
+  }, []);
+
+
   const filteredContracts = contracts.map(c => {
-    const totalBaseAmount = c.amc_payments?.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0) || 0;
+    const totalBaseAmount = c.amc_payments?.reduce((sum: number, p: { amount: number }) => sum + (Number(p.amount) || 0), 0) || 0;
     
     // Calculate the paid amount excluding GST (proportional to base amount)
     const paidAmount = c.amc_payments?.reduce((sum: number, p: any) => {

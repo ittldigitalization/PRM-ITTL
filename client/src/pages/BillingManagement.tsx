@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search, Plus, Trash2, X, Receipt, Upload, Eye, Edit2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-
+import { usePermissions } from '../lib/AuthorizationService';
 interface Billing {
   id: string;
   projectId: string;
@@ -18,27 +18,14 @@ interface Billing {
 }
 
 export default function BillingManagement() {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [milestones, setMilestones] = useState<any[]>([]);
+  const { hasPermission } = usePermissions();
+  interface BillingProject { id: string; name: string; }
+  interface BillingMilestone { id: string; project_id: string; name: string; }
+  const [projects, setProjects] = useState<BillingProject[]>([]);
+  const [milestones, setMilestones] = useState<BillingMilestone[]>([]);
   const [billings, setBillings] = useState<Billing[]>([]);
   const [loading, setLoading] = useState(true);
   
-  useEffect(() => {
-    fetchProjects();
-    fetchBillings();
-
-    const subscription = supabase
-      .channel('billings_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'billings' }, () => {
-        fetchBillings();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, []);
-
   const fetchProjects = async () => {
     const { data: pData } = await supabase.from('projects').select('id, name');
     if (pData) setProjects(pData);
@@ -46,7 +33,7 @@ export default function BillingManagement() {
     if (mData) setMilestones(mData);
   };
 
-  const fetchBillings = async () => {
+const fetchBillings = async () => {
     try {
 
       const { data, error } = await supabase.from('billings').select('*, projects(name), milestones(name)').order('created_at', { ascending: false });
@@ -65,7 +52,8 @@ export default function BillingManagement() {
         paymentStatus: d.payment_status,
         attachmentUrl: d.attachment_url,
         actualDate: d.actual_date,
-      })) || [];
+      }
+  )) || [];
       
       setBillings(formatted);
     } catch (error) {
@@ -74,6 +62,23 @@ export default function BillingManagement() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProjects();
+    fetchBillings();
+
+    const subscription = supabase
+      .channel('billings_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'billings' }, () => {
+        fetchBillings();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
+
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -204,9 +209,9 @@ export default function BillingManagement() {
       
       setIsModalOpen(false);
       resetForm();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving billing:', error);
-      alert('Failed to save billing record: ' + (error.message || JSON.stringify(error)));
+      alert('Failed to save billing record: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
     }
   };
 
@@ -215,9 +220,9 @@ export default function BillingManagement() {
       try {
         const { error } = await supabase.from('billings').delete().eq('id', id);
         if (error) throw error;
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error deleting billing:', error);
-        alert('Failed to delete billing: ' + (error.message || JSON.stringify(error)));
+        alert('Failed to delete billing: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
       }
     }
   };
@@ -239,13 +244,15 @@ export default function BillingManagement() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button 
-          className="btn btn-primary"
-          onClick={() => { resetForm(); setIsModalOpen(true); }}
-        >
-          <Plus size={18} style={{ marginRight: '0.5rem' }} />
-          Add Bill
-        </button>
+        {hasPermission('billing', 'CREATE') && (
+          <button 
+            className="btn btn-primary"
+            onClick={() => { resetForm(); setIsModalOpen(true); }}
+          >
+            <Plus size={18} style={{ marginRight: '0.5rem' }} />
+            Add Bill
+          </button>
+        )}
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
@@ -321,30 +328,36 @@ export default function BillingManagement() {
                   </td>
                   <td>
                     <div className="flex gap-2">
-                      <button 
-                        onClick={() => handleView(bill)}
-                        className="btn" 
-                        style={{ padding: '0.25rem', color: 'var(--primary)' }}
-                        title="View Bill"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleEdit(bill)}
-                        className="btn" 
-                        style={{ padding: '0.25rem', color: '#f59e0b' }}
-                        title="Edit Bill"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(bill.id)}
-                        className="btn" 
-                        style={{ padding: '0.25rem', color: 'var(--destructive)' }}
-                        title="Delete Bill"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {hasPermission('billing', 'READ') && (
+                        <button 
+                          onClick={() => handleView(bill)}
+                          className="btn" 
+                          style={{ padding: '0.25rem', color: 'var(--primary)' }}
+                          title="View Bill"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      )}
+                      {hasPermission('billing', 'UPDATE') && (
+                        <button 
+                          onClick={() => handleEdit(bill)}
+                          className="btn" 
+                          style={{ padding: '0.25rem', color: '#f59e0b' }}
+                          title="Edit Bill"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      )}
+                      {hasPermission('billing', 'DELETE') && (
+                        <button 
+                          onClick={() => handleDelete(bill.id)}
+                          className="btn" 
+                          style={{ padding: '0.25rem', color: 'var(--destructive)' }}
+                          title="Delete Bill"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

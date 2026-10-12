@@ -56,7 +56,14 @@ const RoleManagement: React.FC = () => {
   const [permissionsMap, setPermissionsMap] = useState<Record<string, boolean>>({});
   
   const [activeTab, setActiveTab] = useState<'role_matrix' | 'full_overview'>('role_matrix');
-  const [fullMatrixData, setFullMatrixData] = useState<{ roles: Role[]; destinations: Destination[]; permissions: any[] } | null>(null);
+  
+  interface FullMatrixPermission {
+    role_id: string;
+    destination: string;
+    action: 'CREATE' | 'READ' | 'UPDATE' | 'DELETE';
+  }
+  
+  const [fullMatrixData, setFullMatrixData] = useState<{ roles: Role[]; destinations: Destination[]; permissions: FullMatrixPermission[] } | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [loadingPermissions, setLoadingPermissions] = useState(false);
@@ -859,7 +866,7 @@ const RoleManagement: React.FC = () => {
                     </td>
                     {roles.map(r => {
                       // Check permissions from fullMatrixData or current map
-                      const perms = (fullMatrixData?.permissions || []).filter(
+                      const perms = (fullMatrixData?.permissions as any[] || []).filter(
                         p => p.role_id === r.id && (p.destination === dest.id || p.destination_id === dest.id)
                       );
                       const hasCreate = perms.some(p => p.action === 'CREATE');

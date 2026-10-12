@@ -1,38 +1,38 @@
 import express from 'express';
 import { rbacService } from '../services/rbac';
 import { logAudit } from './audit';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, requireAuth, requirePermission } from '../middleware/auth';
 
 const router = express.Router();
 
 // GET /: List roles
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('access_hub', 'READ'), async (req, res) => {
   try {
-    const roles = rbacService.getRoles();
+    const roles = await rbacService.getRoles();
     res.json(roles);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch roles' });
   }
 });
 
 // GET /matrix: Get full role-permission-destination matrix
-router.get('/matrix', async (req, res) => {
+router.get('/matrix', requirePermission('access_hub', 'READ'), async (req, res) => {
   try {
-    const matrix = rbacService.getFullMatrix();
+    const matrix = await rbacService.getFullMatrix();
     res.json(matrix);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch permission matrix' });
   }
 });
 
 // POST /: Create role
-router.post('/', async (req: AuthRequest, res) => {
+router.post('/', requirePermission('access_hub', 'CREATE'), async (req: AuthRequest, res) => {
   try {
     const { name, description } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Role name is required' });
     }
-    const role = rbacService.createRole(name, description);
+    const role = await rbacService.createRole(name, description);
 
     await logAudit(
       req.user?.id || null,
@@ -51,13 +51,14 @@ router.post('/', async (req: AuthRequest, res) => {
 });
 
 // PUT /:id: Edit role details
-router.put('/:id', async (req: AuthRequest, res) => {
+router.put('/:id', requirePermission('access_hub', 'UPDATE'), async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { name, description } = req.body;
 
-    const oldData = rbacService.getRoles().find(r => r.id === id);
-    const updated = rbacService.updateRole(id, name, description);
+    const rolesList = await rbacService.getRoles();
+    const oldData = rolesList.find(r => r.id === id);
+    const updated = await rbacService.updateRole(id, name, description);
 
     await logAudit(
       req.user?.id || null,
@@ -76,11 +77,12 @@ router.put('/:id', async (req: AuthRequest, res) => {
 });
 
 // DELETE /:id: Delete custom role
-router.delete('/:id', async (req: AuthRequest, res) => {
+router.delete('/:id', requirePermission('access_hub', 'DELETE'), async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
-    const oldData = rbacService.getRoles().find(r => r.id === id);
-    rbacService.deleteRole(id);
+    const id = req.params.id as string;
+    const rolesList = await rbacService.getRoles();
+    const oldData = rolesList.find(r => r.id === id);
+    await rbacService.deleteRole(id);
 
     await logAudit(
       req.user?.id || null,
@@ -99,10 +101,10 @@ router.delete('/:id', async (req: AuthRequest, res) => {
 });
 
 // GET /:id/permissions: Get permissions for a role
-router.get('/:id/permissions', async (req, res) => {
+router.get('/:id/permissions', requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
-    const perms = rbacService.getRolePermissions(id);
+    const id = req.params.id as string;
+    const perms = await rbacService.getRolePermissions(id);
     // Return with destination_id for frontend compatibility
     const mapped = perms.map(p => ({
       destination_id: p.destination,
@@ -111,23 +113,23 @@ router.get('/:id/permissions', async (req, res) => {
     }));
     res.json(mapped);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch role permissions' });
   }
 });
 
 // PUT /:id/permissions: Replace permissions for a role
-router.put('/:id/permissions', async (req: AuthRequest, res) => {
+router.put('/:id/permissions', requirePermission('access_hub', 'UPDATE'), async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { permissions } = req.body; // Expecting array of { destination_id / destination, action }
 
-    const oldPerms = rbacService.getRolePermissions(id);
+    const oldPerms = await rbacService.getRolePermissions(id);
     const formatted = (permissions || []).map((p: any) => ({
       destination: p.destination || p.destination_id,
       action: p.action
     }));
 
-    rbacService.updateRolePermissions(id, formatted);
+    await rbacService.updateRolePermissions(id, formatted);
 
     await logAudit(
       req.user?.id || null,
@@ -141,7 +143,7 @@ router.put('/:id/permissions', async (req: AuthRequest, res) => {
 
     res.json({ success: true, message: 'Permissions saved successfully' });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to update permissions' });
   }
 });
 

@@ -5,7 +5,8 @@ import { supabase } from '../../lib/supabase';
 export default function AmcVisits() {
   const [visits, setVisits] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
-  const [engineers, setEngineers] = useState<any[]>([]);
+  interface AmcEngineer { id: string; username: string; [key: string]: any; }
+  const [engineers, setEngineers] = useState<AmcEngineer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -13,22 +14,7 @@ export default function AmcVisits() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [currentVisit, setCurrentVisit] = useState<any>({});
   
-  useEffect(() => {
-    fetchData();
-
-    const sub = supabase
-      .channel('amc_visits_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'amc_visits' }, () => {
-        fetchData();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(sub);
-    };
-  }, []);
-
-  const fetchData = async () => {
+  async function fetchData() {
     try {
 
       const [visitsRes, contractsRes, usersRes] = await Promise.all([
@@ -45,7 +31,23 @@ export default function AmcVisits() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchData();
+
+    const sub = supabase
+      .channel('amc_visits_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'amc_visits' }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(sub);
+    };
+  }, []);
+
 
   const filteredVisits = visits.filter(v => 
     v.amc_contracts?.amc_number?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -86,9 +88,9 @@ export default function AmcVisits() {
       setIsModalOpen(false);
       setCurrentVisit({});
       fetchData();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving visit:', error);
-      alert('Failed to save visit: ' + (error.message || JSON.stringify(error)));
+      alert('Failed to save visit: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
     }
   };
 
@@ -98,9 +100,9 @@ export default function AmcVisits() {
         const { error } = await supabase.from('amc_visits').delete().eq('id', id);
         if (error) throw error;
         fetchData();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error deleting visit:', error);
-        alert('Failed to delete visit: ' + (error.message || JSON.stringify(error)));
+        alert('Failed to delete visit: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
       }
     }
   };

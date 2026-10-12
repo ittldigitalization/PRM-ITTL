@@ -21,13 +21,47 @@ interface DPRRecord {
 export default function DPR() {
   const { hasPermission } = usePermissions();
   const { currentUserName } = useTeamMembers();
-  const [projects, setProjects] = useState<any[]>([]);
+  interface DPRProject { id: string; name: string; }
+  const [projects, setProjects] = useState<DPRProject[]>([]);
   const [records, setRecords] = useState<DPRRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewScope, setViewScope] = useState<'my' | 'all'>('my');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  const fetchProjects = async () => {
+    const { data } = await supabase.from('projects').select('id, name');
+    if (data) setProjects(data);
+  };
+
+const fetchRecords = async () => {
+    try {
+      const { data, error } = await supabase.from('dprs').select('*, projects(name)').order('created_at', { ascending: false });
+      if (error) throw error;
+
+      const formatted = data?.map(r => ({
+        id: r.id,
+        projectId: r.project_id,
+        projectName: r.projects?.name || 'Unknown',
+        employeeName: r.employee_name,
+        reportDate: r.report_date,
+        hoursWorked: r.hours_worked,
+        taskName: r.task_name,
+        progress: r.progress,
+        status: r.status
+      }
+  
+
+  )) || [];
+      
+      setRecords(formatted);
+    } catch (error) {
+      console.error('Error fetching DPRs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchProjects();
@@ -44,36 +78,6 @@ export default function DPR() {
       supabase.removeChannel(subscription);
     };
   }, []);
-
-  const fetchProjects = async () => {
-    const { data } = await supabase.from('projects').select('id, name');
-    if (data) setProjects(data);
-  };
-
-  const fetchRecords = async () => {
-    try {
-      const { data, error } = await supabase.from('dprs').select('*, projects(name)').order('created_at', { ascending: false });
-      if (error) throw error;
-
-      const formatted = data?.map(r => ({
-        id: r.id,
-        projectId: r.project_id,
-        projectName: r.projects?.name || 'Unknown',
-        employeeName: r.employee_name,
-        reportDate: r.report_date,
-        hoursWorked: r.hours_worked,
-        taskName: r.task_name,
-        progress: r.progress,
-        status: r.status
-      })) || [];
-      
-      setRecords(formatted);
-    } catch (error) {
-      console.error('Error fetching DPRs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const [currentRecord, setCurrentRecord] = useState<Partial<DPRRecord>>({ status: 'In Progress', progress: 0 });
 
@@ -123,9 +127,9 @@ export default function DPR() {
       setIsModalOpen(false);
       setCurrentRecord({});
       fetchRecords();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving DPR:', error);
-      alert('Failed to save DPR: ' + (error.message || JSON.stringify(error)));
+      alert('Failed to save DPR: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
     }
   };
 
@@ -135,9 +139,9 @@ export default function DPR() {
         const { error } = await supabase.from('dprs').delete().eq('id', id);
         if (error) throw error;
         fetchRecords();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error deleting DPR:', error);
-        alert('Failed to delete DPR: ' + (error.message || JSON.stringify(error)));
+        alert('Failed to delete DPR: ' + (error instanceof Error ? error.message : JSON.stringify(error)));
       }
     }
   };

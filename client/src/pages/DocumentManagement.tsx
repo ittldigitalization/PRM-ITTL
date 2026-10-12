@@ -22,22 +22,6 @@ export default function DocumentManagement() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   
-  useEffect(() => {
-    fetchProjects();
-    fetchDocuments();
-
-    const subscription = supabase
-      .channel('documents_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => {
-        fetchDocuments();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, []);
-
   const fetchProjects = async () => {
     const { data: pData } = await supabase.from('projects').select('id, name');
     if (pData) setProjects(pData);
@@ -45,7 +29,7 @@ export default function DocumentManagement() {
     if (mData) setMilestones(mData);
   };
 
-  const fetchDocuments = async () => {
+const fetchDocuments = async () => {
     try {
 
       const { data, error } = await supabase.from('documents').select('*, projects(name, code), milestones(name)').order('upload_date', { ascending: false });
@@ -63,7 +47,10 @@ export default function DocumentManagement() {
         file_url: d.file_url,
         uploadDate: new Date(d.upload_date).toLocaleString(),
         size: d.size_str
-      })) || [];
+      }
+  
+
+  )) || [];
       
       setDocuments(formatted);
     } catch (error) {
@@ -72,6 +59,22 @@ export default function DocumentManagement() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProjects();
+    fetchDocuments();
+
+    const subscription = supabase
+      .channel('documents_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => {
+        fetchDocuments();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'project' | 'billing'>('project');
@@ -210,8 +213,7 @@ export default function DocumentManagement() {
         if (docToDelete && docToDelete.file_url) {
           await supabase.from('tasks').update({ document_url: null }).eq('document_url', docToDelete.file_url);
         }
-
-        fetchDocuments();
+        fetchDocuments();
       } catch (error: any) {
         console.error('Error deleting document:', error);
         alert('Failed to delete document: ' + (error.message || JSON.stringify(error)));
